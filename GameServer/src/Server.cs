@@ -3,9 +3,10 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using GameServer.Packets;
 
 
-namespace ServerForUnity1
+namespace GameServer
 {
     /// <summary>
     /// Calss that handles network connection between clients and server
@@ -32,7 +33,10 @@ namespace ServerForUnity1
 
         #endregion
 
-        private TcpListener serverSocket; //Object that listenes to connections to my server
+        /// <summary>
+        /// Object that listenes to connections to my server
+        /// </summary>
+        private TcpListener serverSocket;
 
         /// <summary>
         /// Slots for clients.
@@ -82,13 +86,13 @@ namespace ServerForUnity1
                 if (!Clients[i].Online())
                 {
                     Clients[i].Socket = client; //Assign newly created socket to this client
-                    Clients[i].ConnectionIndex = i; //Set connection index
+                    Clients[i].ConnectionId = i; //Set connection index
                     Clients[i].IP = client.Client.RemoteEndPoint.ToString(); //Client's ip
                     Log.WriteLine($"Client connected. Index: {i} IP: {client.Client.RemoteEndPoint}", this); //TODO normal say function
                     Clients[i].Start(); //Start recieving data from client
 
                     //send welcome message when client is connected
-                    ServerSendPackets.SendInformation(i);
+                    ServerSendPackets.Send_Information(i);
 
                     return; //Exit after succesfully assigned id to client
                 }

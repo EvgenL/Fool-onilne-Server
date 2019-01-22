@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using Evgen.Byffer;
+using GameServer.RoomLogic;
 
-namespace ServerForUnity1
+namespace GameServer.Packets
 {
     /// <summary>
     /// Class for handling packets sent by clients.
@@ -11,16 +10,27 @@ namespace ServerForUnity1
     /// </summary>
     public static class ServerHandlePackets
     {
-
         /// <summary>
-        /// Pacet id's. Gets converted to long and send at beginning of each packet
+        /// Packet id's. Gets converted to long and send at beginning of each packet
         /// Ctrl+C, Ctrl+V between ServerHandlePackets on server and ClientSendPackets on client
         /// </summary>
         private enum ClientPacketId
         {
             NewAccount = 1,
             Login,
-            ThankYou
+            ThankYou,
+
+            //ROOMS
+            JoinRandom,
+            GiveUp,
+            GetReady,
+            GetNotReady,
+
+            //GAMEPLAY
+            DropCardOnTable,
+            Pass,
+            PickUpCards,
+            CoverCardOnTable,
         }
 
         private delegate void Packet(long connectionId, byte[] data);
@@ -30,8 +40,20 @@ namespace ServerForUnity1
         private static void InitPackets()
         {
             packets = new Dictionary<long, Packet>();
+
+            //ROOMS
             packets.Add((long)ClientPacketId.NewAccount, Packet_NewAccount);
             packets.Add((long)ClientPacketId.ThankYou, Packet_ThankYou);
+            packets.Add((long)ClientPacketId.JoinRandom, Packet_JoinRandom);
+            packets.Add((long)ClientPacketId.GiveUp, Packet_GiveUp);
+            packets.Add((long)ClientPacketId.GetReady, Packet_GetReady);
+            packets.Add((long)ClientPacketId.GetNotReady, Packet_GetNotReady);
+
+            //GAMEPLAY
+            packets.Add((long)ClientPacketId.DropCardOnTable, Packet_DropCardOnTable);
+            packets.Add((long)ClientPacketId.Pass, Packet_Pass);
+            packets.Add((long)ClientPacketId.PickUpCards, Packet_PickUpCards);
+            packets.Add((long)ClientPacketId.CoverCardOnTable, Packet_CoverCardOnTable);
         }
 
         /// <summary>
@@ -69,7 +91,7 @@ namespace ServerForUnity1
 
             if (clientBuffer.Length() >= 8) //long = 8 bytes
             {
-                packetLength = clientBuffer.ReadLong(true);
+                packetLength = clientBuffer.ReadLong(false);
 
                 //if packet is incomplete
                 if (packetLength <= 0)
@@ -130,6 +152,10 @@ namespace ServerForUnity1
                 //Call method tied to a Packet by InitPackets() method
                 packet.Invoke(connectionId, data);
             }
+            else
+            {
+                Log.WriteLine("Wrong packet: " + packetId, typeof(ServerHandlePackets));
+            }
         }
 
 
@@ -141,7 +167,7 @@ namespace ServerForUnity1
         private static void Packet_NewAccount(long connectionId, byte[] data)
         {
             ByteBuffer buffer = new ByteBuffer();
-            buffer.WriteBytes(data);
+            buffer.WriteBytes(data);//TODO different server for registration
         }
 
         private static void Packet_ThankYou(long connectionId, byte[] data)
@@ -149,11 +175,73 @@ namespace ServerForUnity1
             //Add our data to buffer
             ByteBuffer buffer = new ByteBuffer();
             buffer.WriteBytes(data);
-            long packetId = buffer.ReadLong();
+
+            //skip packet id
+            buffer.ReadLong();
             string message = buffer.ReadString();
-            Log.WriteLine(message, typeof(ServerHandlePackets));
+            Log.WriteLine(Server.GetClient(connectionId) + " says: " + message, typeof(ServerHandlePackets));
         }
 
+        private static void Packet_JoinRandom(long connectionId, byte[] data)
+        {
+            RoomManager.JoinRandom(connectionId);
+        }
 
+        private static void Packet_GiveUp(long connectionId, byte[] data)
+        {
+            RoomManager.GiveUp(connectionId);
+        }
+        /*Packet_GetReady);
+        y, Packet_GetNotReady);*/
+
+        private static void Packet_GetReady(long connectionId, byte[] data)
+        {
+            RoomManager.GetReady(connectionId);
+        }
+
+        private static void Packet_GetNotReady(long connectionId, byte[] data)
+        {
+            RoomManager.GetNotReady(connectionId);
+        }
+
+        private static void Packet_DropCardOnTable(long connectionId, byte[] data)
+        {
+            ByteBuffer buffer = new ByteBuffer();
+            buffer.WriteBytes(data);
+
+            //Skip packet id
+            buffer.ReadLong();
+
+            //Read card code
+            string cardCode = buffer.ReadString();
+
+            RoomManager.DropCardOnTable(connectionId, cardCode);
+        }
+
+        private static void Packet_Pass(long connectionId, byte[] data)
+        {
+            RoomManager.Pass(connectionId);
+        }
+
+        private static void Packet_PickUpCards(long connectionId, byte[] data)
+        {
+            RoomManager.PickUpCards(connectionId);
+        }
+
+        private static void Packet_CoverCardOnTable(long connectionId, byte[] data)
+        {
+            ByteBuffer buffer = new ByteBuffer();
+            buffer.WriteBytes(data);
+
+            //Skip packet id
+            buffer.ReadLong();
+
+            //Read card on table code
+            string cardOnTableCode = buffer.ReadString();
+            //Read card dropped code
+            string cardDroppedCode = buffer.ReadString();
+
+            RoomManager.CoverCardOnTable(connectionId, cardOnTableCode, cardDroppedCode);
+        }
     }
 }

@@ -1,8 +1,11 @@
 ﻿using System;
 
-namespace ServerForUnity1
+namespace GameServer
 {
-    public static class Log //TODO log to console, to file
+    /// <summary>
+    /// Statoc class for logging to console or (todo) to file
+    /// </summary>
+    public static class Log
     {
         /// <summary>
         /// Log for non-static classes
@@ -13,7 +16,7 @@ namespace ServerForUnity1
         {
             string[] senderNames = sender.ToString().Split('.');
             string senderName = senderNames[senderNames.Length-1];
-            Console.WriteLine($"[{GetTime()}][{senderName}]: {message}");
+            Console.WriteLine($"[{GetTime()}][{sender}]: {message}");
         }
 
         /// <summary>

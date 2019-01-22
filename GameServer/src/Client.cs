@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Net.Sockets;
 using Evgen.Byffer;
+using GameServer.Packets;
+using GameServer.RoomLogic;
 
-namespace ServerForUnity1
+namespace GameServer
 {
     class Client
     {
         /// <summary>
         /// Client's unique number
         /// </summary>
-        public int ConnectionIndex;
+        public int ConnectionId;
 
         /// <summary>
         /// Client device's IP adress
@@ -17,7 +19,7 @@ namespace ServerForUnity1
         public string IP;
 
         /// <summary>
-        /// /Socket to where this client should write data
+        /// Socket to where this client should write data
         /// </summary>
         public TcpClient Socket;
 
@@ -31,9 +33,38 @@ namespace ServerForUnity1
         /// </summary>
         private byte[] readBuffer;
 
-
         private ByteBuffer buffer;
 
+        /// <summary>
+        /// Is player in room
+        /// </summary>
+        public bool IsInRoom = false;
+
+        /// <summary>
+        /// If player's IsInRoom ten this will be room's id
+        /// </summary>
+        public long RoomId;
+
+        /// <summary>
+        /// On what place (chair) player is sitting in room
+        /// </summary>
+        public int SlotInRoom;
+
+        /// <summary>
+        /// Did player clicked 'ready' button in room before game start
+        /// </summary>
+        public bool IsReady = false;
+
+        /// <summary>
+        /// Passed this turn
+        /// Reset on each turn
+        /// </summary>
+        public bool Pass = false;
+
+
+        /// <summary>
+        /// Clean buffer. Create new if null.
+        /// </summary>
         public void CleanBuffer()
         {
             if (buffer == null)
@@ -41,9 +72,11 @@ namespace ServerForUnity1
                 buffer = new ByteBuffer();
             }
             buffer.Clear();
-
         }
 
+        /// <summary>
+        /// Returns buffer for reading data
+        /// </summary>
         public ByteBuffer GetReadBuffer()
         {
             return buffer;
@@ -99,40 +132,52 @@ namespace ServerForUnity1
 
                 //Handle data
 
-                //TODO Handle data
-
                 //if got disconnected
                 if (Socket == null)
                 {
                     return;
                 }
 
-                Say("Got " + readBytesSize + " bytes of data");
+                //Log.WriteLine("Sent to server " + readBytesSize + " bytes of data", this);
 
-                ServerHandlePackets.
+                //Handle readed data
+                ServerHandlePackets.HandleData(ConnectionId, readBytes);
+
                 //Read another pack of data
                 MyStream.BeginRead(readBuffer, 0, Socket.ReceiveBufferSize, OnRecieveDataCallback, null);
             }
             catch (Exception e)
             {
                 CloseConnection();
-                Say(e.Message);
+                Log.WriteLine(e.ToString(), this);
                 return;
             }
         }
 
-        //Destroys connection between this client and server and marks this socket as free (null)
+        /// <summary>
+        /// Destroys connection between this client and server and marks this socket as free (null)
+        /// </summary>
         private void CloseConnection()
         {
-            Say("Disconnected by client");
+            Log.WriteLine("Disconnected", this);
+
+            //If i was in room i disconnect. //TODO wait for reconnect if it was not intentional
+            if (this.IsInRoom)
+            {
+                RoomInstance room = RoomManager.GetRoomForPlayer(this.ConnectionId);
+                room.LeaveRoom(this.ConnectionId);
+            }
+
+            //if client was in room then wait for him to return
+            RoomManager.OnClientDisconnectedSuddenly(ConnectionId);
+
             Socket.Close();
             Socket = null;
-
         }
 
-        private void Say(string message)
+        public override string ToString()
         {
-            Console.WriteLine($"[Client {ConnectionIndex}: {IP}]: {message}");
+            return $"Client {ConnectionId}: {IP}";
         }
     }
 }

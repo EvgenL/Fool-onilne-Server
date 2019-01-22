@@ -1,4 +1,4 @@
-﻿namespace ServerForUnity1
+﻿namespace GameServer
 {
     public static class Constants
     {

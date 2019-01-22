@@ -1,7 +1,8 @@
-﻿using System;
+﻿
+using System;
 using MySql.Data.MySqlClient;
 
-namespace ServerForUnity1.Db
+namespace GameServer.Db
 {
     /// <summary>
     /// Class working with connection to MySQL database
@@ -60,14 +61,14 @@ namespace ServerForUnity1.Db
         /// <returns>Opened connetion. Null if inacessable.</returns>
         public static MySqlConnection ConnectionOpen()
         {
-            Say("Connecting...");
+            Log.WriteLine("Connecting...", typeof(DatabaseConnection));
             try
             {
                 Instance.connection.Open();
             }
             catch (Exception e)
             {
-                Say("Database server is unacessable.");
+                Log.WriteLine("Database server is unacessable.", typeof(DatabaseConnection));
                 return null;
             }
             return Instance.connection;
@@ -76,11 +77,6 @@ namespace ServerForUnity1.Db
         public static void ConnectionClose()
         {
             Instance.connection.Close();
-        }
-
-        private static void Say(string message)
-        {
-            Console.WriteLine("[DbConnection]: " + message);
         }
     }
 }

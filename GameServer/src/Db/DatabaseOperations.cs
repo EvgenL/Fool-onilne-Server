@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using MySql.Data.MySqlClient;
 
-namespace ServerForUnity1.Db
+namespace GameServer.Db
 {
     public static class DatabaseOperations
     {
@@ -32,23 +32,17 @@ namespace ServerForUnity1.Db
             try
             {
                 int rowsAffected = command.ExecuteNonQuery();
-                Say($"Added user {email}.");
+                Log.WriteLine($"Added user {email}.", typeof(DatabaseOperations));
             }
             catch (Exception e)
             {
-                Say(e.Message);
+                Log.WriteLine(e.Message, typeof(DatabaseOperations));
             }
             finally
             {
                 //disconnect from mysql
                 DatabaseConnection.ConnectionClose();
             }
-        }
-
-
-        private static void Say(string message)
-        {
-            Console.WriteLine("[DatabaseOperations]: " + message);
         }
 
         #region Util methods to put in different calss TODO

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Threading;
-using ServerForUnity1.Db;
 
-namespace ServerForUnity1
+namespace GameServer
 {
+    /// <summary>
+    /// Program entry point
+    /// </summary>
     class Program
     {
         private static Thread consoleThread;
@@ -19,12 +21,12 @@ namespace ServerForUnity1
             consoleThread.Start();
 
             //Connect to db
-            DatabaseConnection.Instance.MySQLInit();
+            //DatabaseConnection.Instance.MySQLInit();
 
             //Create a server instance and start it
             Server.Instance.ServerStart();
         }
-        
+
         /// <summary>
         /// Creates console thread, processes commands.
         /// </summary>
@@ -33,6 +35,7 @@ namespace ServerForUnity1
             string line;
             consoleIsRunning = true;
 
+            //Command loop
             while (consoleIsRunning)
             {
                 line = Console.ReadLine();
@@ -45,6 +48,10 @@ namespace ServerForUnity1
                 else if (line == "help")
                 {
                     Console.WriteLine(Constants.HELP_COMMAND_STRING);
+                }
+                else if (line == "clear")
+                {
+                    Console.Clear();
                 }
             }
         }
