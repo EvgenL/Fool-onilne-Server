@@ -3,7 +3,7 @@
 namespace GameServer
 {
     /// <summary>
-    /// Statoc class for logging to console or (todo) to file
+    /// Static class for logging to console or (todo) to file
     /// </summary>
     public static class Log
     {

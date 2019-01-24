@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using GameServer.Packets;
 
 namespace GameServer.RoomLogic
@@ -10,13 +11,13 @@ namespace GameServer.RoomLogic
     /// </summary>
     public static class RoomManager
     {
-        public const int RANDOM_ROOM_PLAYER_COUNT = 2;
+        public const int RANDOM_ROOM_PLAYER_COUNT = 2;//4;
 
         /// <summary>
         /// Active rooms. Both playing and waiting.
         /// Contains pair <RoomId-RoomInstance>
         /// </summary>
-        public static Dictionary<long, RoomInstance> ActiveRooms = new Dictionary<long, RoomInstance>();
+        public static HashSet<RoomInstance> ActiveRooms = new HashSet<RoomInstance>();
 
         /// <summary>
         /// Joins player to totally random room
@@ -24,13 +25,13 @@ namespace GameServer.RoomLogic
         /// <param name="connectionId">Player's who wanna join connection id</param>
         public static void JoinRandom(long connectionId)
         {
-            Log.WriteLine("[" + Server.GetClient(connectionId) + "] wants to join random room.", typeof(RoomManager));
+            /*Log.WriteLine("[" + Server.GetClient(connectionId) + "] wants to join random room.", typeof(RoomManager));
 
             if (Server.GetClient(connectionId).IsInRoom)
             {
                 Log.WriteLine("[" + Server.GetClient(connectionId) + "] is already in room. Abort.", typeof(RoomManager));
                 return;
-            }
+            }*/
 
             //Getting not-full rooms
             List<RoomInstance> availableRooms = GetAvailableRooms();
@@ -73,11 +74,11 @@ namespace GameServer.RoomLogic
             List<RoomInstance> AvailableRooms =new List<RoomInstance>();
 
             //Selecting rooms which are not playing and have a free slot
-            foreach (var roomOb in ActiveRooms.Values)
+            foreach (var roomInstance in ActiveRooms)
             {
-                RoomInstance roomInstance = (RoomInstance) roomOb;
+                bool haveFreeSlots = roomInstance.ConnectedPlayersN < roomInstance.MaxPlayers;
 
-                if (roomInstance.State == RoomInstance.RoomState.WaitingForPlayersToConnect && roomInstance.HasFreeSlots)
+                if (roomInstance.State == RoomInstance.RoomState.WaitingForPlayersToConnect && haveFreeSlots)
                 {
                     AvailableRooms.Add(roomInstance);
                 }
@@ -90,7 +91,7 @@ namespace GameServer.RoomLogic
         {
             long id = GetFreeRoomId();
             RoomInstance room = new RoomInstance(id, RANDOM_ROOM_PLAYER_COUNT); //TODO set not random amount of players
-            ActiveRooms.Add(id, room);
+            ActiveRooms.Add(room);
             Log.WriteLine("Created a new room. Id: " + id, typeof(RoomManager));
             return room;
         }
@@ -101,15 +102,19 @@ namespace GameServer.RoomLogic
         /// <returns>Not used id. Returns 0 if every of [-long..+long] values are used.</returns>
         private static long GetFreeRoomId()
         {
-            for (long id = long.MinValue; id < long.MaxValue; id++)
+            HashSet<long> usedIds = new HashSet<long>();
+
+            foreach (var roomInstance in ActiveRooms)
             {
-                //If not contains certain id
-                RoomInstance room;
-                if (!ActiveRooms.TryGetValue(id, out room))
-                {
-                    return id;
-                }
+                usedIds.Add(roomInstance.RoomId);
             }
+
+            for (long i = long.MinValue; i < long.MaxValue; i++)
+            {
+                if (!usedIds.Contains(i))
+                    return i;
+            }
+
             return 0;
         }
 
@@ -194,21 +199,12 @@ namespace GameServer.RoomLogic
                 return null;
             }
 
-            long roomId = client.RoomId;
-            //if theres room with certain player
-            RoomInstance room = null;
-            if (ActiveRooms.TryGetValue(roomId, out room))
-            {
-                room = (RoomInstance)ActiveRooms[roomId];
-            }
-
-            return room;
+            return ActiveRooms.First(room => room.ContainsPlayer(client.ConnectionId));
         }
-
 
         public static void DeleteRoom(RoomInstance room)
         {
-            ActiveRooms.Remove(room.RoomId);
+            ActiveRooms.Remove(room);
             room.Dispose();
         }
     }

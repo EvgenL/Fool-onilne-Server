@@ -11,7 +11,7 @@ namespace GameServer
     /// <summary>
     /// Calss that handles network connection between clients and server
     /// </summary>
-    class Server : IDisposable //IDisposable needed for closing listener on server stop
+    public class Server : IDisposable //IDisposable needed for closing listener on server stop
     {
 
         #region Singleton

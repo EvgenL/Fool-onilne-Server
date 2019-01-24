@@ -6,7 +6,7 @@ using GameServer.RoomLogic;
 
 namespace GameServer
 {
-    class Client
+    public class Client
     {
         /// <summary>
         /// Client's unique number

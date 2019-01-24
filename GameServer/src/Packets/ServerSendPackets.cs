@@ -192,7 +192,7 @@ namespace GameServer.Packets
                 //Write player's id
                 buffer.WriteLong(playerId);
                 //Write player's slot number
-                buffer.WriteInteger(room.GetPlayerSlotNumber(playerId));
+                buffer.WriteInteger(room.GetSlotN(playerId));
             }
 
             //Add maxPlayers

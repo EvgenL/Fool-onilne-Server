@@ -8,15 +8,7 @@ namespace GameServer.RoomLogic
 {
     public class RoomInstance : IDisposable
     {
-        public enum RoomState
-        {
-            WaitingForPlayersToConnect,
-            PlayersGettingReady,
-            Playing
-        }
-
-        public RoomState State { get; private set; }
-
+        #region Constants and enum
 
         /// <summary>
         /// pause before sending NextTurn 
@@ -24,11 +16,38 @@ namespace GameServer.RoomLogic
         /// </summary>
         private const int SLEEP_BEFORE_NEXT_TURN = 1000;
 
+        /// <summary>
+        /// Max amount of cards which player can draw from talon
+        /// If player has more cards than this number, he wont take any
+        /// </summary>
+        private const int MAX_DRAW_CARDS = 6;
+
+        /// <summary>
+        /// Max amount of attackting cards on first attack
+        /// </summary>
+        private const int MAX_CARDS_FIRST_ATTACK = 5;
+
+        public enum RoomState
+        {
+            WaitingForPlayersToConnect,
+            PlayersGettingReady,
+            Playing
+        }
+
+        #endregion
+
+        #region public fields
+
+        public RoomState State { get; private set; }
 
         /// <summary>
         /// Unique room number
         /// </summary>
-        private long RoomId;
+        public long RoomId { get; private set; }
+
+        #endregion
+
+        #region Private fields
 
         /// <summary>
         /// Players in room
@@ -36,38 +55,31 @@ namespace GameServer.RoomLogic
         private List<long> PlayerIds;
 
         /// <summary>
+        /// Client objects of connected clients that are sorted by slot number
+        /// </summary>
+        private Client[] clientsInRoom;
+
+        /// <summary>
         /// if room was used more than once
         /// </summary>
-        private int roundsPlayerInThisRoom;
+        private int roundsPlayedInThisRoom;
 
         /// <summary>
         /// who was fool in last game if was
         /// </summary>
-        private long lastLoserPlayerId = -1;
-
-        /// <summary>
-        /// MaxPlayers allowed to join
-        /// </summary>
-        public int MaxPlayers { private set; get; }
+        private long lastFoolPlayerId = -1;
 
         /// <summary>
         /// Returns a number of players currently in room
         /// </summary>
         public int ConnectedPlayersN => PlayerIds.Count;
 
-
-        public bool HasFreeSlots => ConnectedPlayersN < MaxPlayers;
-
-
-        private Client[] clientsInRoom;
+        #region Game rules fields
 
         /// <summary>
-        /// This is numbers of slots to player id dictionary
-        /// In fool game, players pass cards to each other counter-clockwise so the position on table matters.
+        /// MaxPlayers allowed to join
         /// </summary>
-        public Dictionary<int, long> Slots;
-
-        #region Game rules fields
+        public int MaxPlayers { private set; get; }
 
         /// <summary>
         /// Initial number of cards in talon
@@ -94,7 +106,7 @@ namespace GameServer.RoomLogic
         /// </summary>
         private int bet;
 
-
+        //Game rules fields
         #endregion
 
         #region Gameplay fields
@@ -105,12 +117,16 @@ namespace GameServer.RoomLogic
         /// </summary>
         private Stack<string> talon;
 
+        /// <summary>
+        /// Trump card code
+        /// </summary>
         private string trumpCard;
 
         /// <summary>
-        /// Player id : player cards in hand
+        /// player cards in hand
+        /// sorted by player's slotN
         /// </summary>
-        private List<List<string>> playerHands;
+        private List<string>[] playerHands;
 
         /// <summary>
         /// cardsOnTable[i][0] - card on table
@@ -119,32 +135,40 @@ namespace GameServer.RoomLogic
         private List<string[]> cardsOnTable; 
 
         /// <summary>
-        /// Max amount of cards which player can draw from talon
-        /// If player has more cards than this number, he wont take any
-        /// </summary>
-        private const int MAX_DRAW_CARDS = 6;
-
-        /// <summary>
         /// Turn number
         /// </summary>
         private int turnN = 0;
 
         /// <summary>
-        /// Did defender fassed in this game
+        /// Did defender passed on this turn
         /// </summary>
         private bool defenderGaveUpDefence;
 
         /// <summary>
-        /// Did attacker passed in this game
+        /// Did attacker passed on this turn so everybody else can add cards (подкидывать)
         /// </summary>
         private bool attackerPassedPriority;
 
+        /// <summary>
+        /// Player who attacks at this turn
+        /// </summary>
         private Client attacker;
+
+        /// <summary>
+        /// Player who defends at this turn
+        /// </summary>
         private Client defender;
 
+        /// <summary>
+        /// Players who are with empty hands when talon is empty
+        /// </summary>
         private bool[] playersWon;
 
+        //Gameplay fields
         #endregion
+
+        //Private fields
+        #endregion 
 
         public RoomInstance(long roomId, int maxPlayers)
         {
@@ -153,7 +177,6 @@ namespace GameServer.RoomLogic
 
             //Create player connectionId list with capacity of MaxPlayers
             PlayerIds = new List<long>(maxPlayers);
-            Slots = new Dictionary<int, long>(maxPlayers);
             clientsInRoom = new Client[maxPlayers];
         }
 
@@ -182,7 +205,7 @@ namespace GameServer.RoomLogic
             }
 
             //Set player's slot
-            int slotN = OccupyFreeSlot(connectionId);
+            int slotN = OccupyFreeSlot();
 
             //if no free slots then return
             if (slotN == -1)
@@ -193,7 +216,6 @@ namespace GameServer.RoomLogic
             }
 
             //Add to player list
-            Slots.Add(slotN, connectionId);
             PlayerIds.Add(connectionId);
             clientsInRoom[slotN] = Server.GetClient(connectionId);
 
@@ -268,13 +290,21 @@ namespace GameServer.RoomLogic
             }
         }
 
+        private void Kick(long connectionId, string reason)
+        {
+            LeaveRoom(connectionId); //todo send reason to player
+        }
+
         private void ClearLists()
         {
             foreach (var hand in playerHands)
             {
-                hand.Clear();
+                //hand will be null at 0 turnN
+                //if (hand != null) hand.Clear();
+                hand?.Clear();
             }
-            playerHands.Clear();
+
+            playerHands = null;
             cardsOnTable.Clear();
 
             talon.Clear();
@@ -288,7 +318,6 @@ namespace GameServer.RoomLogic
             client.IsInRoom = false;
 
             PlayerIds.Remove(playerId);
-            Slots.Remove(client.SlotInRoom);
             clientsInRoom[client.SlotInRoom] = null;
             return client;
         }
@@ -306,36 +335,16 @@ namespace GameServer.RoomLogic
         /// Set player's chair when he enters room
         /// </summary>
         /// <param name="connctionId">Player's connection id</param>
-        private int OccupyFreeSlot(long connctionId)
+        private int OccupyFreeSlot()
         {
-            for (int i = 0; i < MaxPlayers; i++)
+            for (int i = 0; i < clientsInRoom.Length; i++)
             {
-                if (!Slots.ContainsKey(i))
+                //if slot is empty
+                if (clientsInRoom[i] == null)
                 {
                     return i;
                 }
             }
-
-            return -1;
-        }
-
-        /// <summary>
-        /// Gets player's slot number
-        /// </summary>
-        /// <param name="connctionId">Player's connection id</param>
-        public int GetPlayerSlotNumber(long connctionId)
-        {
-            for (int i = 0; i < MaxPlayers; i++)
-            {
-                if (Slots.ContainsKey(i))
-                {
-                    if (Slots[i] == connctionId)
-                    {
-                        return i;
-                    }
-                }
-            }
-
             return -1;
         }
 
@@ -343,8 +352,6 @@ namespace GameServer.RoomLogic
         {
             return PlayerIds.ToArray();
         }
-
-
 
         #endregion
 
@@ -365,8 +372,6 @@ namespace GameServer.RoomLogic
         public void GiveUp(long connectionId)
         {
             LeaveRoom(connectionId);
-
-            
         }
 
         /// <summary>
@@ -531,7 +536,9 @@ namespace GameServer.RoomLogic
                             ServerSendPackets.Send_Beaten(playerId);
                         }
                         NextTurnDelay();
-                        
+
+                        TableToDiscard();
+
                     }
                 }
                 else //if defender DID gave up an attack
@@ -539,7 +546,7 @@ namespace GameServer.RoomLogic
                     if (EverybodyPassed() || cardsOnTable.Count >= 6) //todo check
                     {
                         //Send defender picks cards
-                        SendDefenderPicksUp();
+                        DefenderPicksUp();
 
                         NextTurnDelay();
                     }
@@ -560,6 +567,12 @@ namespace GameServer.RoomLogic
             }
         }
 
+        private void TableToDiscard()
+        {
+            //todo store dicard
+            cardsOnTable.Clear();
+        }
+
         /// <summary>
         /// Ends game with somobody as fool (loser)
         /// </summary>
@@ -576,9 +589,9 @@ namespace GameServer.RoomLogic
         }
 
         /// <summary>
-        /// This means that defender did gave up his defence
+        /// This means that defender did gave up his defence and picks up cards
         /// </summary>
-        private void SendDefenderPicksUp()
+        private void DefenderPicksUp()
         {
             //Put cards from table to defender's hand
             List<string> defenderHand = playerHands[defender.SlotInRoom];
@@ -590,6 +603,8 @@ namespace GameServer.RoomLogic
                     defenderHand.Add(cardPair[1]);
                 }
             }
+
+            cardsOnTable.Clear();
 
             foreach (var playerId in PlayerIds)
             {
@@ -609,18 +624,8 @@ namespace GameServer.RoomLogic
 
             if (cardsOnTable.Count == 0) return;
 
-            //Send to other players
-            int slotN = GetSlotN(passedPlayerId);
-            foreach (var otherPlayer in PlayerIds)
-            {
-                if (otherPlayer == passedPlayerId) continue;
 
-                ServerSendPackets.Send_OtherPlayerPassed(otherPlayer, passedPlayerId, slotN);
-            }
-
-            GetClient(passedPlayerId).Pass = true;
-
-            SomebodyPassed();
+            OnSomebodyPassed(passedPlayerId);
         }
 
         /// <summary>
@@ -640,18 +645,7 @@ namespace GameServer.RoomLogic
             //Set state variable
             defenderGaveUpDefence = true;
 
-            //Send to other players
-            int slotN = GetSlotN(pickedPlayerId);
-            foreach (var otherPlayer in PlayerIds)
-            {
-                if (otherPlayer == pickedPlayerId) continue;
-
-                ServerSendPackets.Send_OtherPlayerPickedUp(otherPlayer, pickedPlayerId, slotN);
-            }
-
-            GetClient(pickedPlayerId).Pass = true;
-
-            SomebodyPassed();
+            OnSomebodyPassed(pickedPlayerId);
         }
 
         /// <summary>
@@ -700,6 +694,8 @@ namespace GameServer.RoomLogic
         }
 
         #endregion
+
+        #region Gameplay
 
         /// <summary>
         /// Validation of can card on table be covered with come card
@@ -752,14 +748,29 @@ namespace GameServer.RoomLogic
         /// New turn can be started when:
         /// 1) everybody passes
         /// 2) time's up
+        /// 3) everybody but defender passes
         /// </summary>
-        private void SomebodyPassed()
+        private void OnSomebodyPassed(long passedPlayerId)
         {
+
+            //Send to other players
+            int slotN = GetSlotN(passedPlayerId);
+            foreach (var otherPlayer in PlayerIds)
+            {
+                if (otherPlayer == passedPlayerId) continue;
+
+                ServerSendPackets.Send_OtherPlayerPassed(otherPlayer, passedPlayerId, slotN);
+            }
+
+            GetClient(passedPlayerId).Pass = true;
+
+
+
             //if everybody are passed (also defender)
-            if (EverybodyPassed())
+            if (defenderGaveUpDefence && EverybodyPassed())
             {
                 //send defender takes cards
-                SendDefenderPicksUp();
+                DefenderPicksUp();
 
                 NextTurnDelay();
             }
@@ -773,6 +784,8 @@ namespace GameServer.RoomLogic
                         ServerSendPackets.Send_Beaten(playerId);
                     }
                     NextTurnDelay();
+
+                    TableToDiscard();
                 }
             }
         }
@@ -801,7 +814,6 @@ namespace GameServer.RoomLogic
                 Thread.Sleep(SLEEP_BEFORE_NEXT_TURN);
 
                 //Next turn
-
                 if (CheckGameEndConditions())
                 {
                     ClearLists();
@@ -823,8 +835,6 @@ namespace GameServer.RoomLogic
 
             turnN++;
 
-            cardsOnTable.Clear();
-
             GiveCardsToPlayers();
 
             SetNextAttackerAndDefender();
@@ -839,6 +849,7 @@ namespace GameServer.RoomLogic
                 ServerSendPackets.Send_NextTurn(playerId, attacker.ConnectionId, attacker.SlotInRoom,
                     defender.ConnectionId, defender.SlotInRoom, turnN);
             }
+
             defenderGaveUpDefence = false;
             attackerPassedPriority = false;
         }
@@ -846,7 +857,7 @@ namespace GameServer.RoomLogic
         /// <summary>
         /// Returns slot number for player
         /// </summary>
-        private int GetSlotN(long connectionId)
+        public int GetSlotN(long connectionId)
         {
             return GetClient(connectionId).SlotInRoom;
         }
@@ -880,20 +891,14 @@ namespace GameServer.RoomLogic
             }
         }
 
+        /// <summary>
+        /// Gets client by connection id (not by slotN)
+        /// </summary>
         private Client GetClient(long connectionId)
         {
-            foreach (var client in clientsInRoom)
-            {
-                if (client != null && client.ConnectionId == connectionId)
-                {
-                    return client;
-                }
-                
-            }
-            return null;
+            return clientsInRoom.First(client => client != null && client.ConnectionId == connectionId);
         }
 
-        #region Gameplay
 
         /// <summary>
         /// Inits game. Sets state to Playing.
@@ -935,12 +940,13 @@ namespace GameServer.RoomLogic
         private long SelectFirstAttacker()
         {
             //If there was round then first turn will be for player who sits before loser
-            if (roundsPlayerInThisRoom > 0 && PlayerIds.Contains(lastLoserPlayerId))
+            if (roundsPlayedInThisRoom > 0 && PlayerIds.Contains(lastFoolPlayerId))
             {
-                int loserSlotN = GetSlotN(lastLoserPlayerId);
+                int loserSlotN = GetSlotN(lastFoolPlayerId);
                 int firstPlayerSlotN = loserSlotN--;
                 if (firstPlayerSlotN < 0) firstPlayerSlotN = MaxPlayers - 1;
-                return Slots[firstPlayerSlotN];
+
+                return PlayerIds[firstPlayerSlotN];
             }
 
             //else turn will be done by player who has LEAST value trump suit card
@@ -985,6 +991,10 @@ namespace GameServer.RoomLogic
             return firstPlayer;
         }
 
+        /// <summary>
+        /// Players take cards from talon.
+        /// Gives them cards until they get max value
+        /// </summary>
         private void GiveCardsToPlayers()
         {
             //if talon empty
@@ -996,11 +1006,12 @@ namespace GameServer.RoomLogic
             //on first turn
             if (turnN == 1)
             {
-                playerHands = new List<List<string>>();
+                //init lists
+                playerHands = new List<string>[MaxPlayers];
 
-                foreach (var playerId in PlayerIds)
+                for (int i = 0; i < MaxPlayers; i++)
                 {
-                    playerHands.Add(new List<string>());
+                    playerHands[i] = new List<string>();
                 }
             }
 
@@ -1033,6 +1044,9 @@ namespace GameServer.RoomLogic
             }
         }
 
+        /// <summary>
+        /// Init talon and mix cards
+        /// </summary>
         private void MixTalon()
         {
             //Create sorted deck
@@ -1135,36 +1149,42 @@ namespace GameServer.RoomLogic
                 long attackerId = SelectFirstAttacker();
                 attacker = GetClient(attackerId);
 
-                int defenderSlotN = attacker.SlotInRoom + 1;
-                if (defenderSlotN >= MaxPlayers) defenderSlotN = 0;
-                defender = clientsInRoom[defenderSlotN];
+                defender = PlayerNextTo(attacker);
             }
             else
             {
-                int attackerSlotN = attacker.SlotInRoom;
-                attackerSlotN++;
-                if (attackerSlotN >= MaxPlayers) attackerSlotN = 0;
+                //Defender skips turn if he gave up defence
                 if (defenderGaveUpDefence)
                 {
-                    attackerSlotN++;
-                    if (attackerSlotN >= MaxPlayers) attackerSlotN = 0;
+                    attacker = PlayerNextTo(attacker);
                 }
-                while (playersWon[attackerSlotN])
-                {
-                    attackerSlotN++;
-                    if (attackerSlotN >= MaxPlayers) attackerSlotN = 0;
-                }
-                attacker = clientsInRoom[attackerSlotN];
 
-                int defenderSlotN = attackerSlotN + 1;
-                if (defenderSlotN >= MaxPlayers) defenderSlotN = 0;
-                while (playersWon[attackerSlotN])
-                {
-                    defenderSlotN++;
-                    if (defenderSlotN >= MaxPlayers) defenderSlotN = 0;
-                }
-                defender = clientsInRoom[defenderSlotN];
+                //Set next player pair
+                attacker = PlayerNextTo(attacker);
+
+                defender = PlayerNextTo(attacker);
             }
+        }
+
+        /// <summary>
+        /// Gets player who sits left to specified player and also not won.
+        /// Left means slot += 1
+        /// </summary>
+        private Client PlayerNextTo(Client rightPlayer)
+        {
+            int rightSlotN = rightPlayer.SlotInRoom;
+
+            int leftSlotN = rightSlotN;
+
+            do
+            {
+                leftSlotN = (leftSlotN + 1) % MaxPlayers;
+
+                if (leftSlotN == rightSlotN) return rightPlayer;
+
+            } while (playersWon[leftSlotN]);
+
+            return clientsInRoom[leftSlotN];
         }
 
         /// <summary>
@@ -1193,14 +1213,17 @@ namespace GameServer.RoomLogic
 
         #endregion
 
-
         #region IDisposable
 
         private void ReleaseUnmanagedResources()
         {
+            foreach (var playerId in PlayerIds)
+            {
+                Kick(playerId, "Room was deleted");
+            }
+
             PlayerIds = null;
-            Slots.Clear();
-            Slots = null;
+            clientsInRoom = null;
         }
 
         public void Dispose()
