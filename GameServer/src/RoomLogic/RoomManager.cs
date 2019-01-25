@@ -11,7 +11,7 @@ namespace GameServer.RoomLogic
     /// </summary>
     public static class RoomManager
     {
-        public const int RANDOM_ROOM_PLAYER_COUNT = 2;//4;
+        public const int RANDOM_ROOM_PLAYER_COUNT = 4;//2;
 
         /// <summary>
         /// Active rooms. Both playing and waiting.
@@ -142,44 +142,44 @@ namespace GameServer.RoomLogic
         public static void GiveUp(long connectionId)
         {
             RoomInstance room = GetRoomForPlayer(connectionId);
-            room.GiveUp(connectionId);
+            if (room.ContainsPlayer(connectionId))
+                room.GiveUp(connectionId);
 
         }
 
         public static void GetReady(long connectionId)
         {
             RoomInstance room = GetRoomForPlayer(connectionId);
-            room.GetReady(connectionId);
+            if (room.ContainsPlayer(connectionId))
+                room.GetReady(connectionId);
         }
 
         public static void GetNotReady(long connectionId)
         {
             RoomInstance room = GetRoomForPlayer(connectionId);
-            room.GetNotReady(connectionId);
+            if (room.ContainsPlayer(connectionId))
+                room.GetNotReady(connectionId);
         }
 
         public static void DropCardOnTable(long connectionId, string cardCode)
         {
             RoomInstance room = GetRoomForPlayer(connectionId);
-            room.DropCardOnTable(connectionId, cardCode);
+            if (room.ContainsPlayer(connectionId))
+                room.DropCardOnTable(connectionId, cardCode);
         }
 
         public static void Pass(long connectionId)
         {
             RoomInstance room = GetRoomForPlayer(connectionId);
-            room.Pass(connectionId);
-        }
-
-        public static void PickUpCards(long connectionId)
-        {
-            RoomInstance room = GetRoomForPlayer(connectionId);
-            room.PickUpCards(connectionId);
+            if (room.ContainsPlayer(connectionId))
+                room.Pass(connectionId);
         }
 
         public static void CoverCardOnTable(long connectionId, string cardCodeOnTable, string cardCodeDropped)
         {
             RoomInstance room = GetRoomForPlayer(connectionId);
-            room.CoverCardOnTable(connectionId, cardCodeOnTable, cardCodeDropped);
+            if (room.ContainsPlayer(connectionId))
+                room.CoverCardOnTable(connectionId, cardCodeOnTable, cardCodeDropped);
         }
 
 

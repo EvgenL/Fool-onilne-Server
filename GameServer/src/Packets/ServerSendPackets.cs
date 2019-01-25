@@ -42,7 +42,6 @@ namespace GameServer.Packets
             EndGame,
             EndGameGiveUp,
             OtherPlayerPassed,
-            OtherPlayerPickedUpCards,
             OtherPlayerCoversCard,
             Beaten,
             DefenderPicksCards,
@@ -522,24 +521,6 @@ namespace GameServer.Packets
 
             //Add packet id
             buffer.WriteLong((long)SevrerPacketId.OtherPlayerPassed);
-
-            //Add passedPlayerId
-            buffer.WriteLong(passedPlayerId);
-
-            //Add passed palyer slotN
-            buffer.WriteInteger(slotN);
-
-            //Send packet
-            SendDataTo(connectionId, buffer.ToArray());
-        }
-
-        public static void Send_OtherPlayerPickedUp(long connectionId, long passedPlayerId, int slotN)
-        {
-            //New packet
-            ByteBuffer buffer = new ByteBuffer();
-
-            //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.OtherPlayerPickedUpCards);
 
             //Add passedPlayerId
             buffer.WriteLong(passedPlayerId);

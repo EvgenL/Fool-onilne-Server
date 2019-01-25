@@ -382,7 +382,11 @@ namespace GameServer.RoomLogic
             //If somehow it was sent not during GetReady state then ignore
             if (State != RoomState.PlayersGettingReady) return;
 
-            GetClient(connectionId).IsReady = true;
+            Client client = GetClient(connectionId);
+
+            if (client.IsReady) return;
+
+            client.IsReady = true;
 
             //Send this to everybody in room
             foreach (var otherPlayerId in PlayerIds)
@@ -435,7 +439,7 @@ namespace GameServer.RoomLogic
             }
 
             //if somehow player sent this not during his turn //TODO or can add cards
-            if (attacker.ConnectionId != connectionId)
+            if (attacker.ConnectionId != connectionId && !attackerPassedPriority)
             {
                 ServerSendPackets.Send_DropCardOnTableErrorNotYourTurn(connectionId, cardCode);
                 return;
@@ -543,7 +547,16 @@ namespace GameServer.RoomLogic
                 }
                 else //if defender DID gave up an attack
                 {
-                    if (EverybodyPassed() || cardsOnTable.Count >= 6) //todo check
+                    //set every player but defender to no-pass
+                    foreach (var client in clientsInRoom)
+                    {
+                        if (client != defender)
+                        {
+                            client.Pass = false;
+                        }
+                    }
+
+                    if (cardsOnTable.Count >= 6) //todo check
                     {
                         //Send defender picks cards
                         DefenderPicksUp();
@@ -624,28 +637,60 @@ namespace GameServer.RoomLogic
 
             if (cardsOnTable.Count == 0) return;
 
+            Client passedClient = GetClient(passedPlayerId);
 
-            OnSomebodyPassed(passedPlayerId);
-        }
+            //did he already passed
+            if (passedClient.Pass) return;
 
-        /// <summary>
-        /// Recieved on defender wants to pick up cards from table
-        /// </summary>
-        public void PickUpCards(long pickedPlayerId)
-        {
-            if (State != RoomState.Playing)
+            if (passedPlayerId == defender.ConnectionId)
             {
+                defenderGaveUpDefence = true;
+            }
+            else if (passedClient == attacker)
+            {
+                attackerPassedPriority = true;
+            }
+            else if (!attackerPassedPriority)
+            {
+                //you can't attack
                 return;
             }
+            
 
-            if (cardsOnTable.Count == 0) return;
+            //Send to other players
+            int slotN = GetSlotN(passedPlayerId);
+            foreach (var otherPlayer in PlayerIds)
+            {
+                if (otherPlayer == passedPlayerId) continue;
 
-            if (pickedPlayerId != defender.ConnectionId) return;
+                ServerSendPackets.Send_OtherPlayerPassed(otherPlayer, passedPlayerId, slotN);
+            }
 
-            //Set state variable
-            defenderGaveUpDefence = true;
+            passedClient.Pass = true;
 
-            OnSomebodyPassed(pickedPlayerId);
+
+            //if everybody are passed (also defender)
+            if (EverybodyPassed())
+            {
+                //send defender takes cards
+                DefenderPicksUp();
+
+                NextTurnDelay();
+            }
+            else if (EverybodyButDefenderPassed())
+            {
+                if (AllCardsBeaten())
+                {
+                    // send beaten
+                    foreach (var playerId in PlayerIds)
+                    {
+                        ServerSendPackets.Send_Beaten(playerId);
+                    }
+                    NextTurnDelay();
+
+                    TableToDiscard();
+                }
+            }
         }
 
         /// <summary>
@@ -742,52 +787,6 @@ namespace GameServer.RoomLogic
             }
 
             return -1;
-        }
-
-        /// <summary>
-        /// New turn can be started when:
-        /// 1) everybody passes
-        /// 2) time's up
-        /// 3) everybody but defender passes
-        /// </summary>
-        private void OnSomebodyPassed(long passedPlayerId)
-        {
-
-            //Send to other players
-            int slotN = GetSlotN(passedPlayerId);
-            foreach (var otherPlayer in PlayerIds)
-            {
-                if (otherPlayer == passedPlayerId) continue;
-
-                ServerSendPackets.Send_OtherPlayerPassed(otherPlayer, passedPlayerId, slotN);
-            }
-
-            GetClient(passedPlayerId).Pass = true;
-
-
-
-            //if everybody are passed (also defender)
-            if (defenderGaveUpDefence && EverybodyPassed())
-            {
-                //send defender takes cards
-                DefenderPicksUp();
-
-                NextTurnDelay();
-            }
-            else if (EverybodyButDefenderPassed())
-            {
-                if (AllCardsBeaten())
-                {
-                    // send beaten
-                    foreach (var playerId in PlayerIds)
-                    {
-                        ServerSendPackets.Send_Beaten(playerId);
-                    }
-                    NextTurnDelay();
-
-                    TableToDiscard();
-                }
-            }
         }
 
         private bool EverybodyPassed()

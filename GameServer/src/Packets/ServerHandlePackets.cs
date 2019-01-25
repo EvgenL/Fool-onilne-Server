@@ -29,7 +29,6 @@ namespace GameServer.Packets
             //GAMEPLAY
             DropCardOnTable,
             Pass,
-            PickUpCards,
             CoverCardOnTable,
         }
 
@@ -52,7 +51,6 @@ namespace GameServer.Packets
             //GAMEPLAY
             packets.Add((long)ClientPacketId.DropCardOnTable, Packet_DropCardOnTable);
             packets.Add((long)ClientPacketId.Pass, Packet_Pass);
-            packets.Add((long)ClientPacketId.PickUpCards, Packet_PickUpCards);
             packets.Add((long)ClientPacketId.CoverCardOnTable, Packet_CoverCardOnTable);
         }
 
@@ -221,11 +219,6 @@ namespace GameServer.Packets
         private static void Packet_Pass(long connectionId, byte[] data)
         {
             RoomManager.Pass(connectionId);
-        }
-
-        private static void Packet_PickUpCards(long connectionId, byte[] data)
-        {
-            RoomManager.PickUpCards(connectionId);
         }
 
         private static void Packet_CoverCardOnTable(long connectionId, byte[] data)
