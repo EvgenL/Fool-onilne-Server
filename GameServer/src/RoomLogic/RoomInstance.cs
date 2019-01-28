@@ -164,6 +164,23 @@ namespace GameServer.RoomLogic
         /// </summary>
         private bool[] playersWon;
 
+        /// <summary>
+        /// Every player who won will be added to this stack.
+        /// Needed to calculate rewards between players.
+        /// Who won first gets highest prize.
+        /// </summary>
+        private Stack<Client> playersWinningOrder;
+
+        /// <summary>
+        /// Rewards of players who did won
+        /// </summary>
+        private Dictionary<long, double> playersRewards;
+
+        /// <summary>
+        /// Players who are clicked 'pass' this turn
+        /// </summary>
+        private bool[] playersPass;
+
         //Gameplay fields
         #endregion
 
@@ -256,18 +273,22 @@ namespace GameServer.RoomLogic
             //if was playing: end game
             if (State == RoomState.Playing)
             {
-                Dictionary<long, int> rewards = new Dictionary<long, int>();
-
-                for (int i = 0; i < PlayerIds.Count; i++)
+                //todo //if player not won
+                //divide rewards
+                double betLeft = bet - (bet / (playersWinningOrder.Count + 1));
+                int playersNotWon = MaxPlayers - playersWinningOrder.Count;
+                foreach (var playierId in PlayerIds)
                 {
-                    rewards.Add(PlayerIds[i], 1000); //TODO calculate rewards
+                    if (!playersRewards.ContainsKey(playierId))
+                    {
+                        playersRewards.Add(playierId, betLeft / playersNotWon);
+                    }
                 }
-                rewards[leftPlayerId] = -1000;
 
                 //Send everybody endgame message
                 foreach (var playerId in PlayerIds)
                 {
-                    ServerSendPackets.Send_EndGameGiveUp(playerId, leftPlayerId, rewards);
+                    ServerSendPackets.Send_EndGameGiveUp(playerId, leftPlayerId, playersRewards);
                 }
                 ClearLists();
             }
@@ -334,7 +355,6 @@ namespace GameServer.RoomLogic
         /// <summary>
         /// Set player's chair when he enters room
         /// </summary>
-        /// <param name="connctionId">Player's connection id</param>
         private int OccupyFreeSlot()
         {
             for (int i = 0; i < clientsInRoom.Length; i++)
@@ -438,7 +458,7 @@ namespace GameServer.RoomLogic
                 return;
             }
 
-            //if somehow player sent this not during his turn //TODO or can add cards
+            //if somehow player sent this not during his turn
             if (attacker.ConnectionId != connectionId && !attackerPassedPriority)
             {
                 ServerSendPackets.Send_DropCardOnTableErrorNotYourTurn(connectionId, cardCode);
@@ -527,9 +547,9 @@ namespace GameServer.RoomLogic
                 if (!defenderGaveUpDefence)
                 {
                     //set every player to no-pass
-                    foreach (var client in clientsInRoom)
+                    for (int i = 0; i < MaxPlayers; i++)
                     {
-                        client.Pass = false;
+                        playersPass[i] = false;
                     }
 
                     if (AllCardsBeaten() && cardsOnTable.Count >= 6)
@@ -548,12 +568,11 @@ namespace GameServer.RoomLogic
                 else //if defender DID gave up an attack
                 {
                     //set every player but defender to no-pass
-                    foreach (var client in clientsInRoom)
+                    for (int i = 0; i < MaxPlayers; i++)
                     {
-                        if (client != defender)
-                        {
-                            client.Pass = false;
-                        }
+                        if (i == defender.SlotInRoom) continue;
+
+                        playersPass[i] = false;
                     }
 
                     if (cardsOnTable.Count >= 6) //todo check
@@ -570,13 +589,36 @@ namespace GameServer.RoomLogic
             int playerSlotN = GetSlotN(playerUpdatedTableId);
             if (playerHands[playerSlotN].Count == 0)
             {
-                playersWon[playerSlotN] = true;
+                PlayerWon(playerUpdatedTableId);
             }
 
             if (CheckGameEndConditions())
             {
                 int foolSlotN = playersWon.ToList().IndexOf(false);
                 EndGameFool(clientsInRoom[foolSlotN]);
+            }
+        }
+
+        /// <summary>
+        /// Set player as victorious
+        /// </summary>
+        /// <param name="connectionId">Id of player who won</param>
+        private void PlayerWon(long connectionId)
+        {
+            int playerSlotN = GetSlotN(connectionId);
+            playersWon[playerSlotN] = true;
+
+            playersWinningOrder.Push(GetClient(connectionId));
+
+            //todo calculate reward for him
+
+            double reward = bet / (playersWinningOrder.Count + 1d);
+
+            playersRewards.Add(connectionId, reward);
+
+            foreach (var otherPlayerId in PlayerIds)
+            {
+                ServerSendPackets.Send_PlayerWon(otherPlayerId, connectionId, reward);
             }
         }
 
@@ -591,14 +633,15 @@ namespace GameServer.RoomLogic
         /// </summary>
         private void EndGameFool(Client fool)
         {
-            State = RoomState.PlayersGettingReady;
-
-            CheckEverybobyJoined();
+            playersRewards.Add(fool.ConnectionId, -bet);
 
             foreach (var player in PlayerIds)
             {
-                ServerSendPackets.Send_EndGameFool(player, fool.ConnectionId);
+                ServerSendPackets.Send_EndGameFool(player, fool.ConnectionId, playersRewards);
             }
+
+            State = RoomState.PlayersGettingReady;
+            CheckEverybobyJoined();
         }
 
         /// <summary>
@@ -640,7 +683,8 @@ namespace GameServer.RoomLogic
             Client passedClient = GetClient(passedPlayerId);
 
             //did he already passed
-            if (passedClient.Pass) return;
+            int slotN = GetSlotN(passedPlayerId);
+            if (playersPass[slotN] || playersWon[slotN]) return;
 
             if (passedPlayerId == defender.ConnectionId)
             {
@@ -658,7 +702,6 @@ namespace GameServer.RoomLogic
             
 
             //Send to other players
-            int slotN = GetSlotN(passedPlayerId);
             foreach (var otherPlayer in PlayerIds)
             {
                 if (otherPlayer == passedPlayerId) continue;
@@ -666,7 +709,7 @@ namespace GameServer.RoomLogic
                 ServerSendPackets.Send_OtherPlayerPassed(otherPlayer, passedPlayerId, slotN);
             }
 
-            passedClient.Pass = true;
+            playersPass[slotN] = true;
 
 
             //if everybody are passed (also defender)
@@ -792,16 +835,27 @@ namespace GameServer.RoomLogic
         private bool EverybodyPassed()
         {
             //if everybody are passed
-            return clientsInRoom.All(x => x.Pass);
+            for (int i = 0; i < MaxPlayers; i++)
+            {
+                if (!(playersPass[i] || playersWon[i])) return false;
+            }
+
+            return true;
         }
 
         private bool EverybodyButDefenderPassed()
         {
-            List<Client> noDefender = new List<Client>();
-            noDefender.AddRange(clientsInRoom.ToList());
-            noDefender.Remove(defender);
+            int defenderSlotN = defender.SlotInRoom;
 
-            return noDefender.All(x => x.Pass);
+            //if everybody are passed
+            for (int i = 0; i < MaxPlayers; i++)
+            {
+                if (defenderSlotN == i) continue;
+
+                if (!(playersPass[i] || playersWon[i])) return false;
+            }
+
+            return true;
         }
 
         private void NextTurnDelay()
@@ -838,9 +892,9 @@ namespace GameServer.RoomLogic
 
             SetNextAttackerAndDefender();
 
-            foreach (var client in clientsInRoom)
+            for (int i = 0; i < MaxPlayers; i++)
             {
-                client.Pass = false;
+                playersPass[i] = false;
             }
 
             foreach (var playerId in PlayerIds)
@@ -908,8 +962,7 @@ namespace GameServer.RoomLogic
 
             Log.WriteLine("Everybody are ready. Start game.", this);
 
-            cardsOnTable = new List<string[]>();
-            playersWon = new bool[MaxPlayers];
+            SetLists();
 
             MixTalon();
             Log.WriteLine("Talon mixed", this);
@@ -930,6 +983,15 @@ namespace GameServer.RoomLogic
 
 
             //TODO start timer
+        }
+
+        private void SetLists()
+        {
+            cardsOnTable = new List<string[]>();
+            playersPass = new bool[MaxPlayers];
+            playersWon = new bool[MaxPlayers];
+            playersWinningOrder = new Stack<Client>();
+            playersRewards = new Dictionary<long, double>();
         }
 
         /// <summary>
@@ -1127,7 +1189,7 @@ namespace GameServer.RoomLogic
         {
             foreach (var cardPair in cardsOnTable)
             {
-                if (cardPair.Length != 2)
+                if (cardPair.Length > 1)
                 {
                     if (cardPair[0] == null || cardPair[0] == ""
                         || cardPair[1] == null || cardPair[1] == "")

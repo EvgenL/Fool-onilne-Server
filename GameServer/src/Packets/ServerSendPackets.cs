@@ -45,7 +45,8 @@ namespace GameServer.Packets
             OtherPlayerCoversCard,
             Beaten,
             DefenderPicksCards,
-            EndGameFool
+            EndGameFool,
+            PlayerWon
 
         }
        
@@ -488,7 +489,7 @@ namespace GameServer.Packets
             SendDataTo(connectionId, buffer.ToArray());
         }
 
-        public static void Send_EndGameGiveUp(long connectionId, long foolConnectionId, Dictionary<long, int> rewards)
+        public static void Send_EndGameGiveUp(long connectionId, long foolConnectionId, Dictionary<long, double> rewards)
         {
             //New packet
             ByteBuffer buffer = new ByteBuffer();
@@ -507,7 +508,33 @@ namespace GameServer.Packets
                 //Add player id
                 buffer.WriteLong(reward.Key);
                 //Add player reward
-                buffer.WriteInteger(reward.Value);
+                buffer.WriteDouble(reward.Value);
+            }
+
+            //Send packet
+            SendDataTo(connectionId, buffer.ToArray());
+        }
+
+        public static void Send_EndGameFool(long connectionId, long foolPlayerId, Dictionary<long, double> rewards)
+        {
+            //New packet
+            ByteBuffer buffer = new ByteBuffer();
+
+            //Add packet id
+            buffer.WriteLong((long)SevrerPacketId.EndGameFool);
+
+            //Add foolPlayerId
+            buffer.WriteLong(foolPlayerId);
+
+            //Add rewards count
+            buffer.WriteInteger(rewards.Count);
+            //Add rewards
+            foreach (var reward in rewards)
+            {
+                //Add player id
+                buffer.WriteLong(reward.Key);
+                //Add player reward
+                buffer.WriteDouble(reward.Value);
             }
 
             //Send packet
@@ -577,16 +604,19 @@ namespace GameServer.Packets
             SendDataTo(connectionId, buffer.ToArray());
         }
 
-        public static void Send_EndGameFool(long connectionId, long foolPlayerId)
+        public static void Send_PlayerWon(long connectionId, long winnerId, double winnerReward)
         {
             //New packet
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.EndGameFool);
+            buffer.WriteLong((long)SevrerPacketId.PlayerWon);
 
-            //Add foolPlayerId
-            buffer.WriteLong(foolPlayerId);
+            //Add winnerId
+            buffer.WriteLong(winnerId);
+
+            //Add winner's reward
+            buffer.WriteDouble(winnerReward);
 
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());

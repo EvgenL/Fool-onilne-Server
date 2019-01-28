@@ -55,12 +55,6 @@ namespace GameServer
         /// </summary>
         public bool IsReady = false;
 
-        /// <summary>
-        /// Passed this turn
-        /// Reset on each turn
-        /// </summary>
-        public bool Pass = false;
-
 
         /// <summary>
         /// Clean buffer. Create new if null.
