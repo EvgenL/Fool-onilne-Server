@@ -11,7 +11,7 @@ namespace GameServer.RoomLogic
     /// </summary>
     public static class RoomManager
     {
-        public const int RANDOM_ROOM_PLAYER_COUNT = 4;//2;
+        public const int MAX_ONE_PAKCKET_ROOM_LIST_SIZE = 50;//2;
 
         /// <summary>
         /// Active rooms. Both playing and waiting.
@@ -20,18 +20,75 @@ namespace GameServer.RoomLogic
         public static HashSet<RoomInstance> ActiveRooms = new HashSet<RoomInstance>();
 
         /// <summary>
+        /// Sent by player how wants to create a new room
+        /// </summary>
+        /// <param name="connectionId">Room creator connection id</param>
+        /// <param name="maxPlayers">Max players in room</param>
+        /// <param name="deckSize">Deck size in room</param>
+        public static void CreateRoom(long connectionId, int maxPlayers, int deckSize)
+        {
+            var client = Server.GetClient(connectionId);
+            Log.WriteLine("[" + client + "] wants to create room.", typeof(RoomManager));
+
+            if (client.IsInRoom)
+            {
+                Log.WriteLine("[" + client + "] is already in room. Abort.", typeof(RoomManager));
+                return;
+            }
+
+            //Validate
+            if (maxPlayers < 2 || maxPlayers > 6 ||
+                !(deckSize == 24 || deckSize == 36 || deckSize == 52))
+            {
+                //Send incorrect room
+                return;
+            }
+
+            RoomInstance room = CreateNewRoomInstance();
+            room.MaxPlayers = maxPlayers;
+            room.DeckSize = deckSize;
+            room.HostId = connectionId;
+
+            //Client joins random room
+            if (room.JoinRoom(connectionId))
+            {
+                //Send 'OK' if room has free slots
+                ServerSendPackets.Send_JoinRoomOk(connectionId, room.RoomId);
+            }
+        }
+
+        /// <summary>
+        /// Sent by player who looks at open rooms list.
+        /// Sending him open rooms list
+        /// </summary>
+        public static void RefreshRoomList(long connectionId)
+        {
+            //Get rooms which are not full and not playing
+            List<RoomInstance> openRooms = ActiveRooms.Where(room => room.State == RoomInstance.RoomState.WaitingForPlayersToConnect).ToList();
+            if (openRooms.Count > MAX_ONE_PAKCKET_ROOM_LIST_SIZE)
+            {
+                //filter first MAX_ONE_PAKCKET_ROOM_LIST_SIZE (50) rooms
+                int i = 0;
+                openRooms = openRooms.TakeWhile(_ => i < MAX_ONE_PAKCKET_ROOM_LIST_SIZE).ToList();
+            }
+
+            ServerSendPackets.Send_RoomList(connectionId, openRooms.ToArray());
+        }
+
+        /// <summary>
         /// Joins player to totally random room
         /// </summary>
         /// <param name="connectionId">Player's who wanna join connection id</param>
         public static void JoinRandom(long connectionId)
         {
-            /*Log.WriteLine("[" + Server.GetClient(connectionId) + "] wants to join random room.", typeof(RoomManager));
+            var client = Server.GetClient(connectionId);
+            Log.WriteLine("[" + client + "] wants to join random room.", typeof(RoomManager));
 
-            if (Server.GetClient(connectionId).IsInRoom)
+            if (client.IsInRoom)
             {
-                Log.WriteLine("[" + Server.GetClient(connectionId) + "] is already in room. Abort.", typeof(RoomManager));
+                Log.WriteLine("[" + client + "] is already in room. Abort.", typeof(RoomManager));
                 return;
-            }*/
+            }
 
             //Getting not-full rooms
             List<RoomInstance> availableRooms = GetAvailableRooms();
@@ -45,6 +102,7 @@ namespace GameServer.RoomLogic
 
                 //Creting a new room
                 randomRoom = CreateRandomRoom();
+                randomRoom.HostId = connectionId;
             }
             else //if somebody's playing
             {
@@ -90,7 +148,23 @@ namespace GameServer.RoomLogic
         private static RoomInstance CreateRandomRoom()
         {
             long id = GetFreeRoomId();
-            RoomInstance room = new RoomInstance(id, RANDOM_ROOM_PLAYER_COUNT); //TODO set not random amount of players
+
+            Random r = new Random();
+            int randomPlayerCount = r.Next(2, 5); // 2 - 4 players in random room
+            int randomDeckSize = 24 + 16 * r.Next(0, 3); //24-36-52 cards
+            RoomInstance room = new RoomInstance(id, randomPlayerCount, randomDeckSize);
+            ActiveRooms.Add(room);
+            Log.WriteLine("Created a random room. Id: " + id, typeof(RoomManager));
+            return room;
+        }
+
+        /// <summary>
+        /// Creates room and adds to active rooms
+        /// </summary>
+        private static RoomInstance CreateNewRoomInstance()
+        {
+            long id = GetFreeRoomId();
+            RoomInstance room = new RoomInstance(id); 
             ActiveRooms.Add(room);
             Log.WriteLine("Created a new room. Id: " + id, typeof(RoomManager));
             return room;

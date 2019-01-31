@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Evgen.Byffer;
 using GameServer.RoomLogic;
 
@@ -19,8 +20,10 @@ namespace GameServer.Packets
             NewAccount = 1,
             Login,
             ThankYou,
-
+            
             //ROOMS
+            CreateRoom,
+            RefreshRoomList,
             JoinRandom,
             GiveUp,
             GetReady,
@@ -40,9 +43,12 @@ namespace GameServer.Packets
         {
             packets = new Dictionary<long, Packet>();
 
-            //ROOMS
             packets.Add((long)ClientPacketId.NewAccount, Packet_NewAccount);
             packets.Add((long)ClientPacketId.ThankYou, Packet_ThankYou);
+
+            //ROOMS
+            packets.Add((long)ClientPacketId.CreateRoom, Packet_CreateRoom);
+            packets.Add((long)ClientPacketId.RefreshRoomList, Packet_RefreshRoomList);
             packets.Add((long)ClientPacketId.JoinRandom, Packet_JoinRandom);
             packets.Add((long)ClientPacketId.GiveUp, Packet_GiveUp);
             packets.Add((long)ClientPacketId.GetReady, Packet_GetReady);
@@ -178,6 +184,29 @@ namespace GameServer.Packets
             buffer.ReadLong();
             string message = buffer.ReadString();
             Log.WriteLine(Server.GetClient(connectionId) + " says: " + message, typeof(ServerHandlePackets));
+
+        }
+
+        private static void Packet_CreateRoom(long connectionId, byte[] data)
+        {
+            //Add our data to buffer
+            ByteBuffer buffer = new ByteBuffer();
+            buffer.WriteBytes(data);
+
+            //skip packet id
+            buffer.ReadLong();
+
+            //Read max players
+            int maxPlayers = buffer.ReadInteger();
+            //Read deckSize players
+            int deckSize = buffer.ReadInteger();
+
+            RoomManager.CreateRoom(connectionId, maxPlayers, deckSize);
+        }
+
+        private static void Packet_RefreshRoomList(long connectionId, byte[] data)
+        {
+            RoomManager.RefreshRoomList(connectionId);
         }
 
         private static void Packet_JoinRandom(long connectionId, byte[] data)

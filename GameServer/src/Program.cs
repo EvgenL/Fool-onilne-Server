@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Text;
 using System.Threading;
+using Evgen.Byffer;
 
 namespace GameServer
 {
@@ -16,7 +18,6 @@ namespace GameServer
         /// </summary>
         private static void Main(string[] args)
         {
-
             consoleThread = new Thread(ConsoleThread);
             consoleThread.Start();
 
@@ -25,6 +26,8 @@ namespace GameServer
 
             //Create a server instance and start it
             Server.Instance.ServerStart();
+
+            Console.ReadLine();
         }
 
         /// <summary>

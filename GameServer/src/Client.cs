@@ -9,6 +9,18 @@ namespace GameServer
     public class Client
     {
         /// <summary>
+        /// Clien's display name (not unique)
+        /// //todo register, store nicknames
+        /// </summary>
+        public string Nickname => "Игрок " + ConnectionId;
+
+        /// <summary>
+        /// Clien's registration name (unique)
+        /// //todo register, store idnames
+        /// </summary>
+        public string Id;
+
+        /// <summary>
         /// Client's unique number
         /// </summary>
         public int ConnectionId;

@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Data;
+using System.Text;
 using Evgen.Byffer;
 using GameServer.RoomLogic;
 
@@ -19,6 +21,7 @@ namespace GameServer.Packets
             Information = 1,
 
             //ROOMS
+            RoomList,
             JoinRoomOk,
             FaliToJoinFullRoom,
             YouAreAlreadyInRoom,
@@ -129,6 +132,41 @@ namespace GameServer.Packets
 
             //Add packet id
             buffer.WriteLong((long)packetId);
+
+            //Send packet
+            SendDataTo(connectionId, buffer.ToArray());
+        }
+
+        /// <summary>
+        /// Send when player has succesfully connected to room
+        /// </summary>
+        public static void Send_RoomList(long connectionId, RoomInstance[] rooms)
+        {
+            //New packet
+            ByteBuffer buffer = new ByteBuffer();
+
+            //Add packet id
+            buffer.WriteLong((long)SevrerPacketId.RoomList);
+            //Add room list length
+            buffer.WriteInteger(rooms.Length);
+
+            //add rooms
+            foreach (var room in rooms)
+            {
+                //add room id
+                buffer.WriteLong(room.RoomId);
+                //add max players in room
+                buffer.WriteInteger(room.MaxPlayers);
+                //add deck size
+                buffer.WriteInteger(room.DeckSize);
+                //add players count
+                buffer.WriteInteger(room.ConnectedPlayersN);
+                //add player names
+                foreach (var name in room.GetPlayerNicknames())
+                {
+                    buffer.WriteStringUnicode(name); //using unicode there because player names support all languages
+                }
+            }
 
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());

@@ -76,15 +76,32 @@ namespace GameServer.RoomLogic
 
         #region Game rules fields
 
+        private int _maxPlayers;
+
         /// <summary>
         /// MaxPlayers allowed to join
         /// </summary>
-        public int MaxPlayers { private set; get; }
+        public int MaxPlayers
+        {
+            set
+            {
+                //Create player connectionId list with capacity of MaxPlayers
+                PlayerIds = new List<long>(value);
+                clientsInRoom = new Client[value];
+                _maxPlayers = value;
+            }
+            get => _maxPlayers;
+        }
+
+        /// <summary>
+        /// Id of player who created room
+        /// </summary>
+        public long HostId;
 
         /// <summary>
         /// Initial number of cards in talon
         /// </summary>
-        private int talonCardsNumber = 32;
+        public int DeckSize = 36;
 
         /// <summary>
         /// in fool game usually ace can not be a trump card
@@ -185,19 +202,36 @@ namespace GameServer.RoomLogic
         #endregion
 
         //Private fields
-        #endregion 
+        #endregion
+
+        #region Constructors
+
+        
+        public RoomInstance(long roomId)
+        {
+            this.RoomId = roomId;
+            this.MaxPlayers = 6;
+        }
 
         public RoomInstance(long roomId, int maxPlayers)
         {
             this.RoomId = roomId;
             this.MaxPlayers = maxPlayers;
+        }
 
-            //Create player connectionId list with capacity of MaxPlayers
+        public RoomInstance(long roomId, int maxPlayers, int deckSize)
+        {
+            this.RoomId = roomId;
+            this.MaxPlayers = maxPlayers;
+            this.DeckSize = deckSize;
+
             PlayerIds = new List<long>(maxPlayers);
             clientsInRoom = new Client[maxPlayers];
         }
 
-        #region Connection
+        #endregion
+
+        #region Connection methods
 
 
         /// <summary>
@@ -373,10 +407,27 @@ namespace GameServer.RoomLogic
             return PlayerIds.ToArray();
         }
 
+
+        public string[] GetPlayerNicknames()
+        {
+            string[] nicknames = new string[ConnectedPlayersN];
+
+            int i = 0;
+            foreach (var client in clientsInRoom)
+            {
+                if (client != null)
+                {
+                    nicknames[i] = client.Nickname;
+                    i++;
+                }
+            }
+
+            return nicknames;
+        }
+
         #endregion
 
-        //Handle what clients do in room
-        #region Client's messages
+        #region Client's message processing methods
 
         /// <summary>
         /// If client's connection was destroyed we need make other players to wait him.
@@ -610,7 +661,7 @@ namespace GameServer.RoomLogic
 
             playersWinningOrder.Push(GetClient(connectionId));
 
-            //todo calculate reward for him
+            //calculate reward for him
 
             double reward = bet / (playersWinningOrder.Count + 1d);
 
@@ -783,7 +834,7 @@ namespace GameServer.RoomLogic
 
         #endregion
 
-        #region Gameplay
+        #region Gameplay methods
 
         /// <summary>
         /// Validation of can card on table be covered with come card
@@ -1111,12 +1162,12 @@ namespace GameServer.RoomLogic
         private void MixTalon()
         {
             //Create sorted deck
-            List<string> deck = new List<string>(talonCardsNumber);
+            List<string> deck = new List<string>(DeckSize);
             
             //Fill deck with cards
             for (byte i = 0; i < 4; i++) //Four suits (четыре масти)
             {
-                for (byte j = 14; j > 14 - talonCardsNumber / 4; j--) // N/4 cards of each suit
+                for (byte j = 14; j > 14 - DeckSize / 4; j--) // N/4 cards of each suit
                 {
                     //Every card looks like this: 0.14 = ace of spades
                     deck.Add(i + "." + j);
@@ -1124,9 +1175,9 @@ namespace GameServer.RoomLogic
             }
 
             //Fill talon with randomly sorted cards
-            talon = new Stack<string>(talonCardsNumber);
+            talon = new Stack<string>(DeckSize);
             Random random = new Random();
-            for (int i = 0; i < talonCardsNumber; i++)
+            for (int i = 0; i < DeckSize; i++)
             {
                 string randomCard = deck[random.Next(0, deck.Count)];
                 talon.Push(randomCard);
@@ -1159,7 +1210,7 @@ namespace GameServer.RoomLogic
                 tempTalon.Remove(card);
                 break;
             }
-            talon = new Stack<string>(talonCardsNumber);
+            talon = new Stack<string>(DeckSize);
 
             //put trump as very last card of talon
             talon.Push(trumpCard);

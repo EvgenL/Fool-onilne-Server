@@ -1,4 +1,5 @@
 ﻿using System;
+using Evgen.Byffer;
 using GameServer;
 using GameServer.RoomLogic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -30,6 +31,16 @@ namespace GameServerTests
             }
 
             return clients;
+        }
+
+        [TestMethod]
+        private void Test_Buffer()
+        {
+            ByteBuffer buffer = new ByteBuffer();
+            buffer.WriteString("Русский текст");
+
+            string str = buffer.ReadString();
+            Assert.Equals("Русский текст", str);
         }
     }
 }
