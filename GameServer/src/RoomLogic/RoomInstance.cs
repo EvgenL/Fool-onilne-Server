@@ -307,7 +307,7 @@ namespace GameServer.RoomLogic
             //if was playing: end game
             if (State == RoomState.Playing)
             {
-                //todo //if player not won
+                //todo //if player not won!!!!!!!!!!!!!!!
                 //divide rewards
                 double betLeft = bet - (bet / (playersWinningOrder.Count + 1));
                 int playersNotWon = MaxPlayers - playersWinningOrder.Count;

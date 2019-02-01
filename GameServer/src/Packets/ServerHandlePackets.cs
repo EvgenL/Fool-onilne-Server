@@ -20,12 +20,14 @@ namespace GameServer.Packets
             NewAccount = 1,
             Login,
             ThankYou,
-            
+
             //ROOMS
             CreateRoom,
             RefreshRoomList,
+            JoinRoom,
             JoinRandom,
             GiveUp,
+            LeaveRoom,
             GetReady,
             GetNotReady,
 
@@ -49,8 +51,10 @@ namespace GameServer.Packets
             //ROOMS
             packets.Add((long)ClientPacketId.CreateRoom, Packet_CreateRoom);
             packets.Add((long)ClientPacketId.RefreshRoomList, Packet_RefreshRoomList);
+            packets.Add((long)ClientPacketId.JoinRoom, Packet_JoinRoom);
             packets.Add((long)ClientPacketId.JoinRandom, Packet_JoinRandom);
             packets.Add((long)ClientPacketId.GiveUp, Packet_GiveUp);
+            packets.Add((long)ClientPacketId.LeaveRoom, Packet_LeaveRoom);
             packets.Add((long)ClientPacketId.GetReady, Packet_GetReady);
             packets.Add((long)ClientPacketId.GetNotReady, Packet_GetNotReady);
 
@@ -208,6 +212,20 @@ namespace GameServer.Packets
         {
             RoomManager.RefreshRoomList(connectionId);
         }
+        private static void Packet_JoinRoom(long connectionId, byte[] data)
+        {
+            //Add our data to buffer
+            ByteBuffer buffer = new ByteBuffer();
+            buffer.WriteBytes(data);
+
+            //skip packet id
+            buffer.ReadLong();
+
+            //Read room id
+            long roomId = buffer.ReadLong();
+
+            RoomManager.JoinRoom(connectionId, roomId);
+        }
 
         private static void Packet_JoinRandom(long connectionId, byte[] data)
         {
@@ -218,8 +236,10 @@ namespace GameServer.Packets
         {
             RoomManager.GiveUp(connectionId);
         }
-        /*Packet_GetReady);
-        y, Packet_GetNotReady);*/
+        private static void Packet_LeaveRoom(long connectionId, byte[] data)
+        {
+            RoomManager.LeaveRoom(connectionId);
+        }
 
         private static void Packet_GetReady(long connectionId, byte[] data)
         {

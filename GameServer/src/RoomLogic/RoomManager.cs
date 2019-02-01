@@ -75,6 +75,31 @@ namespace GameServer.RoomLogic
             ServerSendPackets.Send_RoomList(connectionId, openRooms.ToArray());
         }
 
+        public static bool JoinRoom(long connectionId, long roomId)
+        {
+            //Getting not-full rooms
+            List<RoomInstance> availableRooms = GetAvailableRooms();
+
+            RoomInstance roomToJoin = availableRooms.Find(room => room.RoomId == roomId);
+
+            //If this room is not present
+            if (roomToJoin == null)
+            {
+                //todo send fail to join
+                ServerSendPackets.Send_RoomList(connectionId, availableRooms.ToArray());
+                return false;
+            }
+
+            if (roomToJoin.JoinRoom(connectionId))
+            {
+                //Send 'OK' if room has free slots
+                ServerSendPackets.Send_JoinRoomOk(connectionId, roomToJoin.RoomId);
+                return true;
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Joins player to totally random room
         /// </summary>
@@ -107,18 +132,15 @@ namespace GameServer.RoomLogic
             else //if somebody's playing
             {
                 //Selecting a random room
+                //todo matchmaking
                 int randomNum = new Random().Next(0, availableRooms.Count);
                 randomRoom = availableRooms[randomNum];
             }
 
             //Client joins random room
-            if (randomRoom.JoinRoom(connectionId))
+            if (!JoinRoom(connectionId, randomRoom.RoomId))
             {
-                //Send 'OK' if room has free slots
-                ServerSendPackets.Send_JoinRoomOk(connectionId, randomRoom.RoomId);
-            }
-            else //join fails
-            {
+                //if join fails
                 //TODO continue finding another room
             }
         }
@@ -129,20 +151,9 @@ namespace GameServer.RoomLogic
         /// <returns>List of available rooms</returns>
         public static List<RoomInstance> GetAvailableRooms()
         {
-            List<RoomInstance> AvailableRooms =new List<RoomInstance>();
-
-            //Selecting rooms which are not playing and have a free slot
-            foreach (var roomInstance in ActiveRooms)
-            {
-                bool haveFreeSlots = roomInstance.ConnectedPlayersN < roomInstance.MaxPlayers;
-
-                if (roomInstance.State == RoomInstance.RoomState.WaitingForPlayersToConnect && haveFreeSlots)
-                {
-                    AvailableRooms.Add(roomInstance);
-                }
-            }
-
-            return AvailableRooms;
+            return ActiveRooms.Where(room => room.ConnectedPlayersN < room.MaxPlayers
+                                                           && room.State == RoomInstance.RoomState
+                                                               .WaitingForPlayersToConnect).ToList();
         }
 
         private static RoomInstance CreateRandomRoom()
@@ -218,6 +229,18 @@ namespace GameServer.RoomLogic
             RoomInstance room = GetRoomForPlayer(connectionId);
             if (room.ContainsPlayer(connectionId))
                 room.GiveUp(connectionId);
+
+        }
+
+        /// <summary>
+        /// Called by client who leaves a game
+        /// </summary>
+        /// <param name="connectionId">Player's connection id</param>
+        public static void LeaveRoom(long connectionId)
+        {
+            RoomInstance room = GetRoomForPlayer(connectionId);
+            if (room.ContainsPlayer(connectionId))
+                room.LeaveRoom(connectionId);
 
         }
 
