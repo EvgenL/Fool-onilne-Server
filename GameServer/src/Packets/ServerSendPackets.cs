@@ -73,13 +73,14 @@ namespace GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Writing packet length as first value
-            buffer.WriteLong((data.GetUpperBound(0) - data.GetLowerBound(0)) + 1); //that's basically get length - 1
+            buffer.WriteLong(data.Length);
+            //writing the data
+            buffer.WriteBytes(data);
 
             Log.WriteLine($"Sent: {(SevrerPacketId)data[0]} to client " + Server.GetClient(connectionId), typeof(ServerSendPackets));
 
-            buffer.WriteBytes(data);
 
-            client.Session.Send(data, 0, data.Length);
+            client.Session.Send(buffer.ToArray(), 0, buffer.Length());
         }
 
         /// <summary>
