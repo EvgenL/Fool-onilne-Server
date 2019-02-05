@@ -143,47 +143,6 @@ namespace GameServer
         }
 
         /// <summary>
-        /// Called on client connected
-        /// </summary>
-       /*
-        private void OnClientConnectCallback(IAsyncResult result)
-        {
-            TcpClient client = serverSocket.EndAcceptTcpClient(result);
-            client.NoDelay = false;
-            
-            //Call this recursivelly while server is up
-            serverSocket.BeginAcceptTcpClient(OnClientConnectCallback, null);
-
-            //////////////////CONNECTING A NEW CLIENT//////////////////
-            
-            //Try assign socket to newly connected client if server's not full
-            for (int i = 0; i < Clients.Length; i++)
-            {
-                //Finding first free socket
-                if (!Clients[i].Online())
-                {
-                    Clients[i].Socket = client; //Assign newly created socket to this client
-                    Clients[i].ConnectionId = i; //Set connection index
-                    Clients[i].IP = client.Client.RemoteEndPoint.ToString(); //Client's ip
-                    Log.WriteLine($"Client connected. Index: {i} IP: {client.Client.RemoteEndPoint}", this); //TODO normal say function
-                    Clients[i].Start(); //Start recieving data from client
-
-                    //send welcome message when client is connected
-                    ServerSendPackets.Send_Information(i);
-
-                    return; //Exit after succesfully assigned id to client
-                }
-            }
-
-            Log.WriteLine("Connection rejected from " + client.Client.RemoteEndPoint + ". Server is full.", this);
-            client.Close();
-            client = null;
-
-            //client.GetStream().Wr;
-        }
-        */
-
-        /// <summary>
         /// Shuts server down
         /// </summary>
         public static void StopServer()

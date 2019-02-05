@@ -13,7 +13,7 @@ namespace GameServerTests
         [TestMethod]
         public void TestLoad_100000clients()
         {
-            Server.Instance.ServerStart();
+            //Server.Instance.ServerStart();
 
             var clients = CreateDummyClients(100000);
 

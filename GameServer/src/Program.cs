@@ -2,6 +2,7 @@
 using System.Text;
 using System.Threading;
 using Evgen.Byffer;
+using GameServer.RoomLogic;
 
 namespace GameServer
 {
@@ -53,6 +54,11 @@ namespace GameServer
                 else if (line == "clear")
                 {
                     Console.Clear();
+                }
+                else if (line == "stats")
+                {
+                    Console.WriteLine("Players on server: " 
+                                      + Server.GetOnlineClientsCount() + ". Active rooms: " + RoomManager.ActiveRooms.Count);
                 }
             }
         }
