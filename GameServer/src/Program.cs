@@ -25,9 +25,7 @@ namespace GameServer
             //DatabaseConnection.Instance.MySQLInit();
 
             //Create a server instance and start it
-            Server.Instance.ServerStart();
-
-            Console.ReadLine();
+            Server.ServerStart(5055);
         }
 
         /// <summary>

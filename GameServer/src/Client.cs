@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Net;
 using System.Net.Sockets;
 using Evgen.Byffer;
 using GameServer.Packets;
 using GameServer.RoomLogic;
+using SuperWebSocket;
 
 namespace GameServer
 {
@@ -28,12 +30,17 @@ namespace GameServer
         /// <summary>
         /// Client device's IP adress
         /// </summary>
-        public string IP;
+        public IPEndPoint IP;
 
         /// <summary>
         /// Socket to where this client should write data
         /// </summary>
         public TcpClient Socket;
+
+        /// <summary>
+        /// Session to where this client should write data
+        /// </summary>
+        public WebSocketSession Session;
 
         /// <summary>
         /// Stream in which to write data to socket
@@ -93,7 +100,7 @@ namespace GameServer
         /// </summary>
         public bool Online()
         {
-            return Socket != null;
+            return Session != null && Session.Connected;
         }
 
         /// <summary>
@@ -101,11 +108,17 @@ namespace GameServer
         /// </summary>
         public void Start()
         {
+            /*
             Socket.SendBufferSize = 4096;
             Socket.ReceiveBufferSize = 4096;
             MyStream = Socket.GetStream();
             readBuffer = new byte[Socket.ReceiveBufferSize];
-            MyStream.BeginRead(readBuffer, 0, Socket.ReceiveBufferSize, OnRecieveDataCallback, null);
+            MyStream.BeginRead(readBuffer, 0, Socket.ReceiveBufferSize, OnRecieveDataCallback, null);*/
+        }
+
+        public void OnNewDataReceived(byte[] data)
+        {
+            ServerHandlePackets.HandleData(ConnectionId, data);
         }
 
         /// <summary>
@@ -144,8 +157,6 @@ namespace GameServer
                     return;
                 }
 
-                //Log.WriteLine("Sent to server " + readBytesSize + " bytes of data", this);
-
                 //Handle readed data
                 ServerHandlePackets.HandleData(ConnectionId, readBytes);
 
@@ -163,7 +174,7 @@ namespace GameServer
         /// <summary>
         /// Destroys connection between this client and server and marks this socket as free (null)
         /// </summary>
-        private void CloseConnection()
+        public void CloseConnection()
         {
             Log.WriteLine("Disconnected", this);
 
@@ -174,11 +185,14 @@ namespace GameServer
                 room.LeaveRoom(this.ConnectionId);
             }
 
+            Session = null;
+
             //if client was in room then wait for him to return
             RoomManager.OnClientDisconnectedSuddenly(ConnectionId);
-
+            /*
             Socket.Close();
             Socket = null;
+            */
         }
 
         public override string ToString()

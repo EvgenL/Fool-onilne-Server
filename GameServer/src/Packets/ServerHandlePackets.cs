@@ -78,16 +78,18 @@ namespace GameServer.Packets
                 InitPackets();
             }
 
-            byte[] buffer = (byte[]) data.Clone();
-
             //Get client who sent data
             Client client = Server.GetClient(connectionId);
+
+            byte[] buffer = (byte[]) data.Clone();
+
 
             //Clean it's buffer
             client.CleanBuffer();
             ByteBuffer clientBuffer = client.GetReadBuffer();
             clientBuffer.WriteBytes(data);
 
+            //packet is empty
             if (clientBuffer.Length() == 0)
             {
                 clientBuffer.Clear();
@@ -109,12 +111,15 @@ namespace GameServer.Packets
                 }
             }
 
+            //while has plackets
             while (packetLength > 0 && packetLength <= clientBuffer.Length() - 8)
             {
                 if (packetLength <= clientBuffer.Length() - 8)
                 {
                     clientBuffer.ReadLong(); //read packet length
                     data = clientBuffer.ReadBytes((int)packetLength);
+
+                    //process packet
                     HandleDataPackets(connectionId, data);
                 }
 
@@ -157,6 +162,8 @@ namespace GameServer.Packets
             //Try find function tied to this packet id
             if (packets.TryGetValue(packetId, out Packet packet))
             {
+                //Log packet id
+                Log.WriteLine($"{Server.GetClient(connectionId)} sent {(ClientPacketId)data[0]}", typeof(ServerHandlePackets));
                 //Call method tied to a Packet by InitPackets() method
                 packet.Invoke(connectionId, data);
             }

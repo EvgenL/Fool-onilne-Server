@@ -62,19 +62,24 @@ namespace GameServer.Packets
         /// <param name="data">byte array data</param>
         public static void SendDataTo(long connectionId, byte[] data)
         {
+            //check if client's online
+            Client client = Server.GetClient(connectionId);
+            if (!client.Online())
+            {
+                Log.WriteLine($"ERROR: Tried to send data to client {Server.GetClient(connectionId)} who isn't online. ", typeof(ServerSendPackets));
+                return;
+            }
+
             ByteBuffer buffer = new ByteBuffer();
 
             //Writing packet length as first value
             buffer.WriteLong((data.GetUpperBound(0) - data.GetLowerBound(0)) + 1); //that's basically get length - 1
 
-            Log.WriteLine($"Sent: {data.Length} bytes of data to client " + Server.GetClient(connectionId), typeof(ServerSendPackets));
+            Log.WriteLine($"Sent: {(SevrerPacketId)data[0]} to client " + Server.GetClient(connectionId), typeof(ServerSendPackets));
 
             buffer.WriteBytes(data);
-            Client client = Server.GetClient(connectionId);
-            if (client.Online())
-            {
-                client.MyStream.BeginWrite(buffer.ToArray(), 0, buffer.Length(), null, null);
-            }
+
+            client.Session.Send(data, 0, data.Length);
         }
 
         /// <summary>
