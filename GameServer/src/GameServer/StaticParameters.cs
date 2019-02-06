@@ -1,4 +1,4 @@
-﻿namespace GameServer
+﻿namespace FoolOnlineServer.GameServer
 {
     //Static parameters set on launch //TODO set on launch
     public static class StaticParameters

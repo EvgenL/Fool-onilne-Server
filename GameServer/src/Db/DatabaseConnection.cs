@@ -1,8 +1,9 @@
-﻿
-using System;
+﻿using System;
+using FoolOnlineServer.GameServer;
+using Logging;
 using MySql.Data.MySqlClient;
 
-namespace GameServer.Db
+namespace FoolOnlineServer.Db
 {
     /// <summary>
     /// Class working with connection to MySQL database

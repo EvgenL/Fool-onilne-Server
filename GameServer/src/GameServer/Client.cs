@@ -2,11 +2,12 @@
 using System.Net;
 using System.Net.Sockets;
 using Evgen.Byffer;
-using GameServer.Packets;
-using GameServer.RoomLogic;
+using FoolOnlineServer.GameServer.Packets;
+using FoolOnlineServer.GameServer.RoomLogic;
+using Logging;
 using SuperWebSocket;
 
-namespace GameServer
+namespace FoolOnlineServer.GameServer
 {
     public class Client
     {

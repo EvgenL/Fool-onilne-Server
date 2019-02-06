@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GameServer
+namespace Logging
 {
     /// <summary>
     /// Static class for logging to console or (todo) to file

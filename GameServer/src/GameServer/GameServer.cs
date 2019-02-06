@@ -1,33 +1,31 @@
 ﻿//TODO refractor this: add regions
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Net;
-using System.Net.Sockets;
 using System.Text;
-using GameServer.Packets;
+using FoolOnlineServer.GameServer.Packets;
+using Logging;
 using SuperSocket.SocketBase;
 using SuperWebSocket;
 
-namespace GameServer
+namespace FoolOnlineServer.GameServer
 {
     /// <summary>
     /// Calss that handles network connection between clients and server
     /// </summary>
-    public class Server : IDisposable //IDisposable needed for closing listener on server stop
+    public class GameServer : IDisposable //IDisposable needed for closing listener on server stop
     {
 
         #region Singleton
 
-        private static Server _instance;
-        public static Server Instance
+        private static GameServer _instance;
+        public static GameServer Instance
         {
             get
             {
                 if (_instance == null)
                 {
-                    _instance = new Server();
+                    _instance = new GameServer();
                 }
 
                 return _instance;
@@ -58,6 +56,12 @@ namespace GameServer
         /// </summary>
         public static void ServerStart(int port)
         {
+            //Start console thread for reading a commands
+            ConsoleThread.Start();
+
+            //todo Connect to db
+            //DatabaseConnection.Instance.MySQLInit();
+
             //Init client list
             Clients = new Client[StaticParameters.MaxClients];
             for (int i = 0; i < StaticParameters.MaxClients; i++)
@@ -171,9 +175,9 @@ namespace GameServer
             //Loop through all the clients
             for (int i = 0; i < StaticParameters.MaxClients; i++)
             {
-                Client client = Server.GetClient(i);
+                Client client = GameServer.GetClient(i);
 
-                if (!client.Online())
+                if (client.Online())
                 {
                     result++;
                 }

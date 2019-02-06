@@ -1,4 +1,4 @@
-﻿namespace GameServer
+﻿namespace FoolOnlineServer.GameServer
 {
     public static class Constants
     {

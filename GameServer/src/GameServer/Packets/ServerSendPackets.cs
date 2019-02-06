@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
-using System.Data;
-using System.Text;
 using Evgen.Byffer;
-using GameServer.RoomLogic;
+using FoolOnlineServer.GameServer.RoomLogic;
+using Logging;
 
-namespace GameServer.Packets
+namespace FoolOnlineServer.GameServer.Packets
 {
     /// <summary>
     /// Proceend sending data from server to client
@@ -63,10 +62,10 @@ namespace GameServer.Packets
         public static void SendDataTo(long connectionId, byte[] data)
         {
             //check if client's online
-            Client client = Server.GetClient(connectionId);
+            Client client = GameServer.GetClient(connectionId);
             if (!client.Online())
             {
-                Log.WriteLine($"ERROR: Tried to send data to client {Server.GetClient(connectionId)} who isn't online. ", typeof(ServerSendPackets));
+                Log.WriteLine($"ERROR: Tried to send data to client {GameServer.GetClient(connectionId)} who isn't online. ", typeof(ServerSendPackets));
                 return;
             }
 
@@ -77,7 +76,7 @@ namespace GameServer.Packets
             //writing the data
             buffer.WriteBytes(data);
 
-            Log.WriteLine($"Sent: {(SevrerPacketId)data[0]} to client " + Server.GetClient(connectionId), typeof(ServerSendPackets));
+            Log.WriteLine($"Sent: {(SevrerPacketId)data[0]} to client " + GameServer.GetClient(connectionId), typeof(ServerSendPackets));
 
 
             client.Session.Send(buffer.ToArray(), 0, buffer.Length());
@@ -92,7 +91,7 @@ namespace GameServer.Packets
             //Loop through all the clients
             for (int i = 0; i < StaticParameters.MaxClients; i++)
             {
-                Client client = Server.GetClient(i);
+                Client client = GameServer.GetClient(i);
 
                 if (client.Online())
                 {

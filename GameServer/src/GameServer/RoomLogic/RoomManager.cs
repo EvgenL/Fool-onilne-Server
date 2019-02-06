@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using GameServer.Packets;
+using FoolOnlineServer.GameServer.Packets;
+using Logging;
 
-namespace GameServer.RoomLogic
+namespace FoolOnlineServer.GameServer.RoomLogic
 {
     /// <summary>
     /// Manages room instances.
@@ -27,7 +28,7 @@ namespace GameServer.RoomLogic
         /// <param name="deckSize">Deck size in room</param>
         public static void CreateRoom(long connectionId, int maxPlayers, int deckSize)
         {
-            var client = Server.GetClient(connectionId);
+            var client = GameServer.GetClient(connectionId);
             Log.WriteLine("[" + client + "] wants to create room.", typeof(RoomManager));
 
             if (client.IsInRoom)
@@ -106,7 +107,7 @@ namespace GameServer.RoomLogic
         /// <param name="connectionId">Player's who wanna join connection id</param>
         public static void JoinRandom(long connectionId)
         {
-            var client = Server.GetClient(connectionId);
+            var client = GameServer.GetClient(connectionId);
             Log.WriteLine("[" + client + "] wants to join random room.", typeof(RoomManager));
 
             if (client.IsInRoom)
@@ -289,7 +290,7 @@ namespace GameServer.RoomLogic
         /// <returns>Room for this player. Null if none.</returns>
         public static RoomInstance GetRoomForPlayer(long connectionId)
         {
-            Client client = Server.GetClient(connectionId);
+            Client client = GameServer.GetClient(connectionId);
 
             if (!client.IsInRoom)
             {

@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Evgen.Byffer;
-using GameServer.RoomLogic;
+using FoolOnlineServer.GameServer.RoomLogic;
+using Logging;
 
-namespace GameServer.Packets
+namespace FoolOnlineServer.GameServer.Packets
 {
     /// <summary>
     /// Class for handling packets sent by clients.
@@ -79,7 +79,7 @@ namespace GameServer.Packets
             }
 
             //Get client who sent data
-            Client client = Server.GetClient(connectionId);
+            Client client = GameServer.GetClient(connectionId);
 
             byte[] buffer = (byte[]) data.Clone();
 
@@ -163,7 +163,7 @@ namespace GameServer.Packets
             if (packets.TryGetValue(packetId, out Packet packet))
             {
                 //Log packet id
-                Log.WriteLine($"{Server.GetClient(connectionId)} sent {(ClientPacketId)data[0]}", typeof(ServerHandlePackets));
+                Log.WriteLine($"{GameServer.GetClient(connectionId)} sent {(ClientPacketId)data[0]}", typeof(ServerHandlePackets));
                 //Call method tied to a Packet by InitPackets() method
                 packet.Invoke(connectionId, data);
             }
@@ -194,7 +194,7 @@ namespace GameServer.Packets
             //skip packet id
             buffer.ReadLong();
             string message = buffer.ReadString();
-            Log.WriteLine(Server.GetClient(connectionId) + " says: " + message, typeof(ServerHandlePackets));
+            Log.WriteLine(GameServer.GetClient(connectionId) + " says: " + message, typeof(ServerHandlePackets));
 
         }
 

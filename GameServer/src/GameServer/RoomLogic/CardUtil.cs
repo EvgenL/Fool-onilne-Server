@@ -1,4 +1,4 @@
-﻿namespace GameServer.RoomLogic
+﻿namespace FoolOnlineServer.GameServer.RoomLogic
 {
     /// <summary>
     /// Static class for helping convert card codes like 0.14 into readable values

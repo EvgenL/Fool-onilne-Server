@@ -2,9 +2,10 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using Logging;
 using MySql.Data.MySqlClient;
 
-namespace GameServer.Db
+namespace FoolOnlineServer.Db
 {
     public static class DatabaseOperations
     {
