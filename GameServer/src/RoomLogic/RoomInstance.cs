@@ -531,6 +531,13 @@ namespace GameServer.RoomLogic
                 return;
             }
 
+            //first turn allows only 5 cards to be dropped
+            if (turnN == 1 && cardsOnTable.Count >= maxCardsOnTableFirstTurn)
+            {
+                ServerSendPackets.Send_DropCardOnTableErrorTableIsFull(connectionId, cardCode);
+                return;
+            }
+
             //if table contains same value card
             //(get card values which are present on table)
             SortedSet<int> cardValuesOnTable = new SortedSet<int>();
@@ -1127,12 +1134,40 @@ namespace GameServer.RoomLogic
                 }
             }
 
-            //give cards to players
-            foreach (var recieverPlayer in PlayerIds)
+            //sort players so attacker takes first and defender takes last
+            List<long> playersPrioritySorted = new List<long>();
+            if (turnN == 1)
             {
+                playersPrioritySorted = PlayerIds;
+            }
+            else
+            {
+                //attacker takes first
+                playersPrioritySorted.Add(attacker.ConnectionId);
+
+                //other players take clockwise (expect defender)
+                Client current = PlayerNextTo(attacker);
+                while (current != attacker)
+                {
+                    if (current != defender)
+                    {
+                        playersPrioritySorted.Add(current.ConnectionId);
+                    }
+                    current = PlayerNextTo(current);
+                }
+
+                //defender takes last
+                playersPrioritySorted.Add(defender.ConnectionId);
+            }
+
+
+            //give cards to players
+            foreach (var recieverPlayer in playersPrioritySorted)
+            {
+                //if player did won then he doesn't get cards anymore
                 if (playersWon[GetSlotN(recieverPlayer)]) continue;
 
-                //if you aldeary have 6+ cards then you wot take any more on this turn
+                //if you aldeary have 6+ cards then you won't take any more on this turn
                 int recieverSlotN = GetSlotN(recieverPlayer);
                 int cardsToDraw = Math.Max(MAX_DRAW_CARDS - playerHands[recieverSlotN].Count, 0);
                 cardsToDraw = Math.Min(cardsToDraw, talon.Count);
