@@ -28,14 +28,14 @@ namespace FoolOnlineServer.src.GameServer
         /// </summary>
         public static Token CreateAnonymousToken(string username)
         {
-            Token token = new Token(username + (DateTime.Now - DateTime.MinValue).TotalSeconds);
+            Token token = new Token(String.Empty, username, String.Empty);
             AcceptToken(token);
             return token;
         }
 
-        public static Token UseToken(string tokenString)
+        public static Token UseToken(int tokenHash)
         {
-            Token token = notUsedTokens.First(t => t.TokenString == tokenString);
+            Token token = notUsedTokens.First(t => t.TokenHash == tokenHash);
             if (token != null)
             {
                 notUsedTokens.Remove(token);

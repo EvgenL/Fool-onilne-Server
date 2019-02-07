@@ -152,7 +152,6 @@ namespace FoolOnlineServer.GameServer.Packets
             long packetId = buffer.ReadLong();
             //Delete buffer from memory
             buffer.Dispose();
-            buffer = null;
 
             //Try find function tied to this packet id
             if (packets.TryGetValue(packetId, out Packet packet))
@@ -195,7 +194,15 @@ namespace FoolOnlineServer.GameServer.Packets
             buffer.ReadLong();
 
             string token = buffer.ReadString();
-            GameServer.AuthorizeClient(connectionId, token);
+
+            if (int.TryParse(token, out int tokenHash))
+            {
+                GameServer.AuthorizeClient(connectionId, tokenHash);
+            }
+            else
+            {
+                ServerSendPackets.Send_ErrorBadAuthToken(connectionId);
+            }
         }
         
         private static void Packet_ThankYou(long connectionId, byte[] data)

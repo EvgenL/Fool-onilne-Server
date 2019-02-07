@@ -122,7 +122,7 @@ namespace FoolOnlineServer.GameServer
         /// <param name="connectionId">User who sent</param>
         /// <param name="tokenString">user's token string</param>
         /// <returns>true on succesful connect, false on fail</returns>
-        public static bool AuthorizeClient(long connectionId, string tokenString)
+        public static bool AuthorizeClient(long connectionId, int tokenHash)
         {
             Client client = GetClient(connectionId);
 
@@ -133,7 +133,7 @@ namespace FoolOnlineServer.GameServer
             }
 
             //get token from manager if exists
-            Token token = TokenManager.UseToken(tokenString);
+            Token token = TokenManager.UseToken(tokenHash);
 
             //if token doesn't exist then send error
             if (token == null)
@@ -142,7 +142,13 @@ namespace FoolOnlineServer.GameServer
                 return false;
             }
 
+            //Authorized OK
+            client.Authorized = true;
+            client.AuthToken = token;
             ServerSendPackets.Send_AuthorizedOk(connectionId);
+            client.UserId = token.UserId;
+            client.Nickname = token.Nickname;
+            ServerSendPackets.Send_UpdateUserData(connectionId);
             return true;
         }
 

@@ -19,6 +19,7 @@ namespace FoolOnlineServer.GameServer.Packets
             //Connection
             AuthorizedOk = 1,
             ErrorBadAuthToken,
+            UpdateUserData,
 
             //ROOMS
             RoomList,
@@ -146,6 +147,30 @@ namespace FoolOnlineServer.GameServer.Packets
 
         }
 
+        public static void Send_UpdateUserData(long connectionId)
+        {
+            //New packet
+            ByteBuffer buffer = new ByteBuffer();
+
+            //Add packet id
+            buffer.WriteLong((long)SevrerPacketId.UpdateUserData);
+
+            Client user = GameServer.GetClient(connectionId);
+
+            //Add current connection id
+            buffer.WriteLong(connectionId);
+
+            //Add userId
+            buffer.WriteString(user.UserId);
+
+            //Add client's display name
+            buffer.WriteString(user.Nickname);
+
+            //Send packet
+            SendDataTo(connectionId, buffer.ToArray());
+
+        }
+
         /// <summary>
         /// Sends only packetId 
         /// </summary>
@@ -246,6 +271,7 @@ namespace FoolOnlineServer.GameServer.Packets
 
             //Add players count
             long[] playerIdsInRoom = room.GetPlayerIds();
+            string[] playerNicknames = room.GetPlayerNicknames();
             buffer.WriteInteger(playerIdsInRoom.Length);
 
             //Add players
@@ -254,7 +280,10 @@ namespace FoolOnlineServer.GameServer.Packets
                 //Write player's id
                 buffer.WriteLong(playerId);
                 //Write player's slot number
-                buffer.WriteInteger(room.GetSlotN(playerId));
+                int slotN = (room.GetSlotN(playerId));
+                buffer.WriteInteger(slotN);
+                //Write player's nickname
+                buffer.WriteString(playerNicknames[slotN]);
             }
 
             //Add maxPlayers
@@ -280,6 +309,9 @@ namespace FoolOnlineServer.GameServer.Packets
 
             //Add player's slot number
             buffer.WriteInteger(slotN);
+
+            //Add nickname
+            buffer.WriteString(GameServer.GetClient(playerIdWhoJoined).Nickname);
 
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());

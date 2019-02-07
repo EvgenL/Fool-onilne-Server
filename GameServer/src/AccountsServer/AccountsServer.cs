@@ -118,6 +118,8 @@ namespace FoolOnlineServer.AccountsServer
 
             }
 
+            //Enable CORS so player could acces this server
+            //response.AddHeader("Access-Control-Allow-Origin", "*");
             response.Close();
         }
 
@@ -174,19 +176,35 @@ namespace FoolOnlineServer.AccountsServer
                 case "anonymous":
                     if (anonymousAllowed)
                     {
-                        response.StatusCode = (int)HttpStatusCode.OK;
-                        //send game server endpoint
-                        response.Headers.Add("Game-server-ip", gameServerIp);
-                        response.Headers.Add("Game-server-port", gameServerPort.ToString());
-                        //send auth token
-                        Token token = TokenManager.CreateAnonymousToken(request.Headers["Usermane"]);
-                        response.AddHeader("Auth-token", token.TokenString);
-                        return true;
+                        if (request.Headers.AllKeys.Contains("Nickname"))
+                        {
+                            //validate nickname
+                            string nickname = request.Headers["Nickname"];
+                            if (nickname.Length == 0)
+                            {
+                                response.StatusCode = (int)HttpStatusCode.Forbidden;
+                                response.Headers.Add("Info", "Nickname can't be empty");
+                                return false;
+                            }
+                            //validation ok
+                            response.StatusCode = (int)HttpStatusCode.OK;
+                            //send game server endpoint
+                            response.Headers.Add("Game-server-ip", gameServerIp);
+                            response.Headers.Add("Game-server-port", gameServerPort.ToString());
+                            //send auth token
+                            Token token = TokenManager.CreateAnonymousToken(nickname);
+                            response.AddHeader("Auth-token", token.TokenHash.ToString());
+                            return true;
+                        }
+
+                        response.StatusCode = (int)HttpStatusCode.Forbidden;
+                        response.Headers.Add("Info", "Nickname required");
+                        return false;
                     }
                     else
                     {
                         response.StatusCode = (int)HttpStatusCode.Forbidden;
-                        response.Headers.Add("Info", "Anonymous login is not allowed.");
+                        response.Headers.Add("Info", "Anonymous login is not allowed");
                         return false;
                     }
                     break;

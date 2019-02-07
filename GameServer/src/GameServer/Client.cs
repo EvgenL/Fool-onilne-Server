@@ -16,13 +16,13 @@ namespace FoolOnlineServer.GameServer
         /// Clien's display name (not unique)
         /// //todo register, store nicknames
         /// </summary>
-        public string Nickname => "Игрок " + ConnectionId;
+        public string Nickname;
 
         /// <summary>
         /// Clien's registration name (unique)
         /// //todo register, store idnames
         /// </summary>
-        public string Id;
+        public string UserId;
 
         /// <summary>
         /// Client's unique number
@@ -43,11 +43,6 @@ namespace FoolOnlineServer.GameServer
         /// Session to where this client should write data
         /// </summary>
         public WebSocketSession Session;
-
-        /// <summary>
-        /// Stream in which to write data to socket
-        /// </summary>
-        public NetworkStream MyStream;
 
         /// <summary>
         /// Buffer for reading data
