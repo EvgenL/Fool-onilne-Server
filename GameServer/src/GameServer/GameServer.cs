@@ -46,7 +46,7 @@ namespace FoolOnlineServer.GameServer
         /// </summary>
         private static Client[] Clients;
 
-        private static Dictionary<WebSocketSession, Client> sessionClientPairs =
+        private static readonly Dictionary<WebSocketSession, Client> sessionClientPairs =
             new Dictionary<WebSocketSession, Client>();
 
         //todo private static HashSet<Client> Clients;
@@ -56,12 +56,6 @@ namespace FoolOnlineServer.GameServer
         /// </summary>
         public static void ServerStart(int port)
         {
-            //Start console thread for reading a commands
-            ConsoleThread.Start();
-
-            //todo Connect to db
-            //DatabaseConnection.Instance.MySQLInit();
-
             //Init client list
             Clients = new Client[StaticParameters.MaxClients];
             for (int i = 0; i < StaticParameters.MaxClients; i++)
@@ -69,7 +63,7 @@ namespace FoolOnlineServer.GameServer
                 Clients[i] = new Client();
             }
 
-            //Creating a new server (also implict creation of new instance)
+            //Creating a new server instance
             Instance.webSocketServer = new WebSocketServer();
 
             //trying start up on port
@@ -133,7 +127,10 @@ namespace FoolOnlineServer.GameServer
         /// </summary>
         private void OnNewMessageReceived(WebSocketSession session, string value)
         {
-            OnNewDataReceived(session, Encoding.ASCII.GetBytes(value));
+            //get message encoding
+            var encoding = session.Charset;
+            //pass to data processing method
+            OnNewDataReceived(session, encoding.GetBytes(value));
         }
 
         private void OnSessionClosed(WebSocketSession session, CloseReason value)

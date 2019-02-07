@@ -17,6 +17,7 @@ namespace FoolOnlineServer.GameServer.Packets
         /// </summary>
         private enum ClientPacketId
         {
+            //LOGIN
             NewAccount = 1,
             Login,
             ThankYou,
@@ -184,7 +185,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
             buffer.WriteBytes(data);//TODO different server for registration
         }
-
+        
         private static void Packet_ThankYou(long connectionId, byte[] data)
         {
             //Add our data to buffer

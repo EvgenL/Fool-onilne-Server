@@ -16,7 +16,7 @@ namespace Logging
         {
             string[] senderNames = sender.ToString().Split('.');
             string senderName = senderNames[senderNames.Length-1];
-            Console.WriteLine($"[{GetDateTime()}][{sender}]: {message}");
+            Console.WriteLine($"[{GetDateTime()}][{senderName}]: {message}");
         }
 
         /// <summary>
@@ -26,7 +26,7 @@ namespace Logging
         /// <param name="senderType">typeof(SenderClass)</param>
         public static void WriteLine(string message, Type senderType)
         {
-            Console.WriteLine($"[{GetTime()}][{senderType.Name}]: {message}");
+            Console.WriteLine($"[{GetDateTime()}][{senderType.Name}]: {message}");
         }
 
         private static string GetTime()
