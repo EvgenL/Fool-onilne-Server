@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using Evgen.Byffer;
 using FoolOnlineServer.GameServer.Packets;
 using FoolOnlineServer.GameServer.RoomLogic;
+using FoolOnlineServer.src.GameServer;
 using Logging;
 using SuperWebSocket;
 
@@ -75,6 +76,15 @@ namespace FoolOnlineServer.GameServer
         /// </summary>
         public bool IsReady = false;
 
+        /// <summary>
+        /// Client's token
+        /// </summary>
+        public Token AuthToken;
+
+        /// <summary>
+        /// Set to true if client did send token
+        /// </summary>
+        public bool Authorized;
 
         /// <summary>
         /// Clean buffer. Create new if null.
@@ -104,78 +114,15 @@ namespace FoolOnlineServer.GameServer
             return Session != null && Session.Connected;
         }
 
-        /// <summary>
-        /// Call on connection.
-        /// </summary>
-        public void Start()
-        {
-            /*
-            Socket.SendBufferSize = 4096;
-            Socket.ReceiveBufferSize = 4096;
-            MyStream = Socket.GetStream();
-            readBuffer = new byte[Socket.ReceiveBufferSize];
-            MyStream.BeginRead(readBuffer, 0, Socket.ReceiveBufferSize, OnRecieveDataCallback, null);*/
-        }
-
         public void OnNewDataReceived(byte[] data)
         {
             ServerHandlePackets.HandleData(ConnectionId, data);
         }
 
         /// <summary>
-        /// Callback for recieving data
-        /// </summary>
-        private void OnRecieveDataCallback(IAsyncResult result)
-        {
-            //Try get data
-            try
-            {
-                //Get size of recieved data
-                int readBytesSize = MyStream.EndRead(result);
-                //if got disconnected
-                if (Socket == null)
-                {
-                    return;
-                }
-
-                //This triggers on when client calls PlayerSocket.Close()
-                if (readBytesSize <= 0)
-                {
-                    CloseConnection();
-                    return;
-                }
-
-                //Copy data to buffer
-                byte[] readBytes = new byte[readBytesSize];
-                Buffer.BlockCopy(readBuffer, 0, readBytes, 0, readBytesSize);
-
-
-                //Handle data
-
-                //if got disconnected
-                if (Socket == null)
-                {
-                    return;
-                }
-
-                //Handle readed data
-                ServerHandlePackets.HandleData(ConnectionId, readBytes);
-
-                //Read another pack of data
-                MyStream.BeginRead(readBuffer, 0, Socket.ReceiveBufferSize, OnRecieveDataCallback, null);
-            }
-            catch (Exception e)
-            {
-                CloseConnection();
-                Log.WriteLine(e.ToString(), this);
-                return;
-            }
-        }
-
-        /// <summary>
         /// Destroys connection between this client and server and marks this socket as free (null)
         /// </summary>
-        public void CloseConnection()
+        public void Disconnect(string disconnectReason = null) //todo send disconnect reason (todo by enum)
         {
             Log.WriteLine("Disconnected", this);
 
@@ -190,10 +137,6 @@ namespace FoolOnlineServer.GameServer
 
             //if client was in room then wait for him to return
             RoomManager.OnClientDisconnectedSuddenly(ConnectionId);
-            /*
-            Socket.Close();
-            Socket = null;
-            */
         }
 
         public override string ToString()

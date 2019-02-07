@@ -17,7 +17,8 @@ namespace FoolOnlineServer.GameServer.Packets
         public enum SevrerPacketId
         {
             //Connection
-            Information = 1,
+            AuthorizedOk = 1,
+            ErrorBadAuthToken,
 
             //ROOMS
             RoomList,
@@ -103,20 +104,19 @@ namespace FoolOnlineServer.GameServer.Packets
         ////////////////////////////DATA PACKETS////////////////////////////
         ////////////////////////////DATA PACKETS////////////////////////////
         ////////////////////////////DATA PACKETS////////////////////////////
-        
 
         /// <summary>
-        /// Sends hello message to client 
+        /// Sends hello message to client when accepted authorizetion
         /// </summary>
-        public static void Send_Information(long connectionId)
+        public static void Send_AuthorizedOk(long connectionId)
         {
             //New packet
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.Information);
+            buffer.WriteLong((long)SevrerPacketId.AuthorizedOk);
 
-            //Add client connection id
+            //Add client's connection id
             buffer.WriteLong(connectionId);
 
             //Add data to packet
@@ -124,6 +124,25 @@ namespace FoolOnlineServer.GameServer.Packets
 
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());
+
+        }
+
+        /// <summary>
+        /// Sends hello message to client when accepted authorizetion
+        /// </summary>
+        public static void Send_ErrorBadAuthToken(long connectionId)
+        {
+            //New packet
+            ByteBuffer buffer = new ByteBuffer();
+
+            //Add packet id
+            buffer.WriteLong((long)SevrerPacketId.ErrorBadAuthToken);
+
+            //Send packet
+            SendDataTo(connectionId, buffer.ToArray());
+
+            //Disconnect client from server
+            GameServer.GetClient(connectionId).Disconnect("Bad auth token");
 
         }
 

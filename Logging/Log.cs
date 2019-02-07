@@ -16,7 +16,8 @@ namespace Logging
         {
             string[] senderNames = sender.ToString().Split('.');
             string senderName = senderNames[senderNames.Length-1];
-            Console.WriteLine($"[{GetDateTime()}][{senderName}]: {message}");
+            
+            Console.WriteLine($"[{GetDateTime()}][{sender}]: {message}");
         }
 
         /// <summary>

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using FoolOnlineServer.GameServer.Packets;
+using FoolOnlineServer.src.GameServer;
 using Logging;
 using SuperSocket.SocketBase;
 using SuperWebSocket;
@@ -48,6 +49,9 @@ namespace FoolOnlineServer.GameServer
 
         private static readonly Dictionary<WebSocketSession, Client> sessionClientPairs =
             new Dictionary<WebSocketSession, Client>();
+
+        private static Dictionary<string, Client> tokenClientPairs 
+            = new Dictionary<string, Client>();
 
         //todo private static HashSet<Client> Clients;
 
@@ -95,22 +99,51 @@ namespace FoolOnlineServer.GameServer
                 if (!Clients[i].Online())
                 {
                     sessionClientPairs.Add(session, Clients[i]);
-                    //Clients[i].Socket = client; //Assign newly created socket to this client
                     Clients[i].Session = session;
                     Clients[i].ConnectionId = i; //Set connection index
                     Clients[i].IP = session.RemoteEndPoint; //Client's ip
+                    Clients[i].Authorized = false;
                     //todo Clients[i].IP = session.
                     Log.WriteLine($"Client connected. Index: {i} IP: {session.RemoteEndPoint}", this); //TODO normal say function
-                    Clients[i].Start(); //Start recieving data from client
-
-                    //send welcome message when client is connected
-                    ServerSendPackets.Send_Information(i);
 
                     return; //Exit after succesfully assigned id to client
                 }
             }
 
             Log.WriteLine("Connection rejected from " + session.RemoteEndPoint + ". Server is full.", this);
+        }
+
+        /// <summary>
+        /// Client sends auth token
+        /// This method checks if token is correct
+        /// and marks user as authorized.
+        /// Also sends Send_ErrorBadAuthToken and Send_AuthorizedOk 
+        /// </summary>
+        /// <param name="connectionId">User who sent</param>
+        /// <param name="tokenString">user's token string</param>
+        /// <returns>true on succesful connect, false on fail</returns>
+        public static bool AuthorizeClient(long connectionId, string tokenString)
+        {
+            Client client = GetClient(connectionId);
+
+            //If client was already authorized then ignore
+            if (client.Authorized)
+            {
+                return true;
+            }
+
+            //get token from manager if exists
+            Token token = TokenManager.UseToken(tokenString);
+
+            //if token doesn't exist then send error
+            if (token == null)
+            {
+                ServerSendPackets.Send_ErrorBadAuthToken(connectionId);
+                return false;
+            }
+
+            ServerSendPackets.Send_AuthorizedOk(connectionId);
+            return true;
         }
 
         /// <summary>
@@ -138,7 +171,7 @@ namespace FoolOnlineServer.GameServer
             if (sessionClientPairs.ContainsKey(session))
             {
                 Client client = sessionClientPairs[session];
-                client.CloseConnection();
+                client.Disconnect();
                 sessionClientPairs.Remove(session);
             }
         }

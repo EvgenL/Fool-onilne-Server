@@ -18,9 +18,7 @@ namespace FoolOnlineServer.GameServer.Packets
         private enum ClientPacketId
         {
             //LOGIN
-            NewAccount = 1,
-            Login,
-            ThankYou,
+            Authorize = 1,
 
             //ROOMS
             CreateRoom,
@@ -46,8 +44,7 @@ namespace FoolOnlineServer.GameServer.Packets
         {
             packets = new Dictionary<long, Packet>();
 
-            packets.Add((long)ClientPacketId.NewAccount, Packet_NewAccount);
-            packets.Add((long)ClientPacketId.ThankYou, Packet_ThankYou);
+            packets.Add((long)ClientPacketId.Authorize, Packet_Authorize);
 
             //ROOMS
             packets.Add((long)ClientPacketId.CreateRoom, Packet_CreateRoom);
@@ -81,9 +78,6 @@ namespace FoolOnlineServer.GameServer.Packets
 
             //Get client who sent data
             Client client = GameServer.GetClient(connectionId);
-
-            byte[] buffer = (byte[]) data.Clone();
-
 
             //Clean it's buffer
             client.CleanBuffer();
@@ -165,6 +159,18 @@ namespace FoolOnlineServer.GameServer.Packets
             {
                 //Log packet id
                 Log.WriteLine($"{GameServer.GetClient(connectionId)} sent {(ClientPacketId)data[0]}", typeof(ServerHandlePackets));
+
+                //check if client is authorized
+                if ((ClientPacketId) data[0] != ClientPacketId.Authorize)
+                {
+                    Client client = GameServer.GetClient(connectionId);
+                    if (!client.Authorized)
+                    {
+                        ServerSendPackets.Send_ErrorBadAuthToken(connectionId);
+
+                        return;
+                    }
+                }
                 //Call method tied to a Packet by InitPackets() method
                 packet.Invoke(connectionId, data);
             }
@@ -180,10 +186,16 @@ namespace FoolOnlineServer.GameServer.Packets
         ////////////////////////////DATA PACKETS////////////////////////////
 
 
-        private static void Packet_NewAccount(long connectionId, byte[] data)
+        private static void Packet_Authorize(long connectionId, byte[] data)
         {
             ByteBuffer buffer = new ByteBuffer();
-            buffer.WriteBytes(data);//TODO different server for registration
+            buffer.WriteBytes(data);
+
+            //skip packet id
+            buffer.ReadLong();
+
+            string token = buffer.ReadString();
+            GameServer.AuthorizeClient(connectionId, token);
         }
         
         private static void Packet_ThankYou(long connectionId, byte[] data)

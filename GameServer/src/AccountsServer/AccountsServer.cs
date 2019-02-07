@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
+using FoolOnlineServer.src.GameServer;
 using Logging;
 using SuperSocket.SocketBase;
 using SuperSocket.SocketEngine;
@@ -59,7 +60,7 @@ namespace FoolOnlineServer.AccountsServer
             var configReader = new AppSettingsReader();
             serverVersion = (string)configReader.GetValue("serverVersion", typeof(string));
             anonymousAllowed = (bool)configReader.GetValue("anonymousAllowed", typeof(bool));
-            gameServerIp = (string)configReader.GetValue("gameServerIp", typeof(string));
+            gameServerIp = (string)configReader.GetValue("gameServerIp-local", typeof(string)); //TODO there we return server ip to where client connects next
             gameServerPort = (int)configReader.GetValue("gameServerPort", typeof(int));
 
             //Create listener
@@ -68,28 +69,6 @@ namespace FoolOnlineServer.AccountsServer
             listener.Start();
             listener.BeginGetContext(OnGetContext, null);
             Log.WriteLine("Server started on port " + port, Instance);
-
-            /*
-            //Creating a new server instance
-            Instance.webSocketServer = new WebSocketServer();
-
-            //trying start up on port
-            var ws = Instance.webSocketServer;
-            if (!ws.Setup(port))
-            {
-                Log.WriteLine("Error starting on port " + port, Instance);
-            }
-
-            //Init callbacks
-            ws.NewSessionConnected += _instance.OnNewSessionConnected;
-            ws.NewDataReceived += _instance.OnNewDataReceived;
-            ws.NewMessageReceived += _instance.OnNewMessageReceived;
-            ws.SessionClosed += _instance.OnSessionClosed;
-
-            //Start server and begin accepting sockets
-            ws.Start();
-            */
-
         }
 
         /// <summary>
@@ -130,6 +109,7 @@ namespace FoolOnlineServer.AccountsServer
                         Login(context);
                         
                     }
+                    //register
                     else if (headers.Contains("Register"))
                     {
                         
@@ -143,6 +123,10 @@ namespace FoolOnlineServer.AccountsServer
 
         /// <summary>
         /// Checks if client's version actual to servers version
+        /// Sends following headers to client:
+        /// Version-check
+        /// Info
+        /// Auth-token
         /// </summary>
         private static bool CheckVersion(HttpListenerContext context)
         {
@@ -160,7 +144,7 @@ namespace FoolOnlineServer.AccountsServer
                     response.AddHeader("Version-check", "Ok");
                     return true;
                 }
-                else
+                else //else if version is outdated
                 {
                     response.AddHeader("Version-check", "Error");
                     response.Headers.Add("Info", "Wrong version.");
@@ -168,7 +152,7 @@ namespace FoolOnlineServer.AccountsServer
                     return false;
                 }
             }
-            else
+            else //else if version not sent
             {
                 response.AddHeader("Version-check", "Error");
                 response.Headers.Add("Info", "Did not found 'Client-version' header.");
@@ -177,11 +161,11 @@ namespace FoolOnlineServer.AccountsServer
             }
         }
 
+
         private static bool Login(HttpListenerContext context)
         {
             HttpListenerRequest request = context.Request;
             HttpListenerResponse response = context.Response;
-            var headers = request.Headers.AllKeys;
 
             string loginMethod = request.Headers["Login"];
 
@@ -191,8 +175,12 @@ namespace FoolOnlineServer.AccountsServer
                     if (anonymousAllowed)
                     {
                         response.StatusCode = (int)HttpStatusCode.OK;
+                        //send game server endpoint
                         response.Headers.Add("Game-server-ip", gameServerIp);
                         response.Headers.Add("Game-server-port", gameServerPort.ToString());
+                        //send auth token
+                        Token token = TokenManager.CreateAnonymousToken(request.Headers["Usermane"]);
+                        response.AddHeader("Auth-token", token.TokenString);
                         return true;
                     }
                     else
@@ -203,40 +191,13 @@ namespace FoolOnlineServer.AccountsServer
                     }
                     break;
 
+                //todo Oauth, Existing-account
+
                 default: return false;
             }
             
 
 
-        }
-
-        private void OnNewSessionConnected(WebSocketSession session)
-        {
-            Log.WriteLine("Connected to accounts server: " + session.RemoteEndPoint, this);
-        }
-
-        /// <summary>
-        /// Callback on client sends data to server
-        /// </summary>
-        private void OnNewDataReceived(WebSocketSession session, byte[] data)
-        {
-            //todo if allow anonymous
-
-        }
-
-        /// <summary>
-        /// Callback on client sends string data to server
-        /// </summary>
-        private void OnNewMessageReceived(WebSocketSession session, string value)
-        {
-            //get message encoding
-            var encoding = session.Charset;
-            //pass to data processing method
-            OnNewDataReceived(session, encoding.GetBytes(value));
-        }
-
-        private void OnSessionClosed(WebSocketSession session, CloseReason value)
-        {
         }
 
         /// <summary>
