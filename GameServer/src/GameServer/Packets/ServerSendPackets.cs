@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Evgen.Byffer;
 using FoolOnlineServer.GameServer.RoomLogic;
 using Logging;
@@ -271,7 +272,7 @@ namespace FoolOnlineServer.GameServer.Packets
 
             //Add players count
             long[] playerIdsInRoom = room.GetPlayerIds();
-            string[] playerNicknames = room.GetPlayerNicknames();
+            var playerNicknames = room.GetPlayerNicknames().ToList();
             buffer.WriteInteger(playerIdsInRoom.Length);
 
             //Add players
@@ -283,7 +284,8 @@ namespace FoolOnlineServer.GameServer.Packets
                 int slotN = (room.GetSlotN(playerId));
                 buffer.WriteInteger(slotN);
                 //Write player's nickname
-                buffer.WriteStringUnicode(playerNicknames[slotN]);
+                buffer.WriteStringUnicode(playerNicknames[0]);
+                playerNicknames.RemoveAt(0);
             }
 
             //Add maxPlayers

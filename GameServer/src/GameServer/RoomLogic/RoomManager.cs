@@ -240,6 +240,8 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         public static void LeaveRoom(long connectionId)
         {
             RoomInstance room = GetRoomForPlayer(connectionId);
+            if (room == null) return;
+
             if (room.ContainsPlayer(connectionId))
                 room.LeaveRoom(connectionId);
 

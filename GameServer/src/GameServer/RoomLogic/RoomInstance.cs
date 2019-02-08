@@ -9,6 +9,8 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 {
     public class RoomInstance : IDisposable
     {
+        private const bool TEST_MODE = true;
+
         #region Constants and enum
 
         /// <summary>
@@ -21,7 +23,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// Max amount of cards which player can draw from talon
         /// If player has more cards than this number, he wont take any
         /// </summary>
-        private const int MAX_DRAW_CARDS = 6;
+        private int MAX_DRAW_CARDS = 6;
 
         /// <summary>
         /// Max amount of attackting cards on first attack
@@ -507,7 +509,6 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         public void DropCardOnTable(long connectionId, string cardCode)
         {
             //VALIDATION
-
             if (State != RoomState.Playing)
             {
                 return;
@@ -534,8 +535,9 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             }
             //else if table is not empty
 
-            //if table is full
-            if (cardsOnTable.Count >= maxCardsOnTable)
+            //if table is full of defender has no more cards to defend
+            if (cardsOnTable.Count >= maxCardsOnTable 
+                || playerHands[defender.SlotInRoom].Count < CardsToBeatCount() + 1)
             {
                 ServerSendPackets.Send_DropCardOnTableErrorTableIsFull(connectionId, cardCode);
                 return;
@@ -580,6 +582,28 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         }
 
         /// <summary>
+        /// Returns count of non-covered cards on table
+        /// </summary>
+        private int CardsToBeatCount()
+        {
+            int result = 0;
+
+            foreach (var cardPair in cardsOnTable)
+            {
+                if (cardPair.Length > 1)
+                {
+                    if (cardPair[0] == null || cardPair[0] == ""
+                                            || cardPair[1] == null || cardPair[1] == "")
+                    {
+                        result++;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// Send OK to player who dropped card
         /// Send info about this card to every other player
         /// </summary>
@@ -608,6 +632,26 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// </summary>
         private void TableUpdated(long playerUpdatedTableId)
         {
+            // if attacker has no cards left then think he passed
+            int slotN = GetSlotN(playerUpdatedTableId);
+            if (defender.SlotInRoom != slotN 
+                && playerHands[slotN].Count == 0)
+            {
+                playersPass[slotN] = true;
+
+                if (playerUpdatedTableId == attacker.ConnectionId)
+                {
+                    attackerPassedPriority = true;
+                }
+
+                // send pass
+                foreach (var playerId in PlayerIds)
+                {
+                    if (playerId == playerUpdatedTableId) continue;
+                    ServerSendPackets.Send_OtherPlayerPassed(playerId, playerUpdatedTableId, slotN);
+                }
+            }
+
             //If there is at least one card
             if (cardsOnTable.Count >= 1)
             {
@@ -617,6 +661,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                     //set every player to no-pass
                     for (int i = 0; i < MaxPlayers; i++)
                     {
+                        if (playerHands[slotN].Count == 0) continue;
                         playersPass[i] = false;
                     }
 
@@ -635,10 +680,10 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                 }
                 else //if defender DID gave up an attack
                 {
-                    //set every player but defender to no-pass
+                    //set every player who has cards but defender to no-pass
                     for (int i = 0; i < MaxPlayers; i++)
                     {
-                        if (i == defender.SlotInRoom) continue;
+                        if (i == defender.SlotInRoom || playerHands[slotN].Count == 0) continue;
 
                         playersPass[i] = false;
                     }
@@ -655,7 +700,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
             //check player's win conditions
             int playerSlotN = GetSlotN(playerUpdatedTableId);
-            if (playerHands[playerSlotN].Count == 0)
+            if (talon.Count == 0 && playerHands[playerSlotN].Count == 0)
             {
                 PlayerWon(playerUpdatedTableId);
             }
@@ -673,6 +718,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// <param name="connectionId">Id of player who won</param>
         private void PlayerWon(long connectionId)
         {
+
             int playerSlotN = GetSlotN(connectionId);
             playersWon[playerSlotN] = true;
 
@@ -1179,6 +1225,11 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
                 //if you aldeary have 6+ cards then you won't take any more on this turn
                 int recieverSlotN = GetSlotN(recieverPlayer);
+
+                if (TEST_MODE)
+                {
+                    MAX_DRAW_CARDS = 2;
+                }
                 int cardsToDraw = Math.Max(MAX_DRAW_CARDS - playerHands[recieverSlotN].Count, 0);
                 cardsToDraw = Math.Min(cardsToDraw, talon.Count);
 
@@ -1206,18 +1257,28 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// </summary>
         private void MixTalon()
         {
+
+            if (TEST_MODE)
+            {
+                DeckSize = MaxPlayers * 2;
+            }
+
             //Create sorted deck
             List<string> deck = new List<string>(DeckSize);
-            
+            int cardsLeft = DeckSize;
             //Fill deck with cards
-            for (byte i = 0; i < 4; i++) //Four suits (четыре масти)
+            int currCard = 14;
+            while (cardsLeft > 0)
             {
-                for (byte j = 14; j > 14 - DeckSize / 4; j--) // N/4 cards of each suit
+                for (byte i = 0; i < 4 && cardsLeft > 0; i++) //Four suits (четыре масти)
                 {
                     //Every card looks like this: 0.14 = ace of spades
-                    deck.Add(i + "." + j);
+                    deck.Add(i + "." + currCard);
+                    cardsLeft--;
                 }
+                currCard--;
             }
+
 
             //Fill talon with randomly sorted cards
             talon = new Stack<string>(DeckSize);
