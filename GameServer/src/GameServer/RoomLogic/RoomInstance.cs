@@ -665,7 +665,9 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                         playersPass[i] = false;
                     }
 
-                    if (AllCardsBeaten() && cardsOnTable.Count >= 6)
+                    // if table is full and beaten
+                    if (AllCardsBeaten() && 
+                        (cardsOnTable.Count >= 6 || (turnN == 1 && cardsOnTable.Count >= MAX_CARDS_FIRST_ATTACK)))
                     {
                         //send beaten
                         foreach (var playerId in PlayerIds)
