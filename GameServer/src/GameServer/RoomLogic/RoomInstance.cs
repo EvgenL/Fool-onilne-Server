@@ -304,6 +304,17 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// <param name="leftPlayerId">Player's connection id</param>
         public void LeaveRoom(long leftPlayerId)
         {
+            //validate
+            if (!PlayerIds.Contains(leftPlayerId)) return;
+
+            var client = RemoveClientFromRoom(leftPlayerId);
+
+            //send to everybody 'on player leave'
+            foreach (var playerId in PlayerIds)
+            {
+                ServerSendPackets.Send_OtherPlayerLeftRoom(playerId, playerId, client.SlotInRoom);
+            }
+
             //SEND WIN MESSAGE
             //if was playing: end game
             if (State == RoomState.Playing)
@@ -326,14 +337,6 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                     ServerSendPackets.Send_EndGameGiveUp(playerId, leftPlayerId, playersRewards);
                 }
                 ClearLists();
-            }
-
-            var client = RemoveClientFromRoom(leftPlayerId);
-
-            //send to everybody 'on player leave'
-            foreach (var playerId in PlayerIds)
-            {
-                ServerSendPackets.Send_OtherPlayerLeftRoom(playerId, playerId, client.SlotInRoom);
             }
 
             Log.WriteLine("Player left room " + client, this);
@@ -507,6 +510,12 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
             if (State != RoomState.Playing)
             {
+                return;
+            }
+
+            if (connectionId == defender.ConnectionId)
+            {
+                //todo ServerSendPackets.Send_DropCardOnTableErrorYouAreDefending(connectionId, cardCode);
                 return;
             }
 

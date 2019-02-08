@@ -5,8 +5,10 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using FoolOnlineServer.src.GameServer;
 using Logging;
+using Newtonsoft.Json.Linq;
 using SuperSocket.SocketBase;
 using SuperSocket.SocketEngine;
 using SuperWebSocket;
@@ -96,31 +98,51 @@ namespace FoolOnlineServer.AccountsServer
             HttpListenerRequest request = context.Request;
             HttpListenerResponse response = context.Response;
 
-            if (request.HttpMethod == "POST")
+            var headers = request.Headers.AllKeys;
+            if (request.Headers["Content-Type"].StartsWith("text/json"))
             {
+                //Read body
+                byte[] buffer = new byte[4096];
+                int len = request.InputStream.Read(buffer, 0, buffer.Length);
+                byte[] readBytes = new byte[len];
+                Buffer.BlockCopy(buffer, 0, readBytes, 0, len);
+                buffer = null;
+                var encoding = request.ContentEncoding;
+                string readString = encoding.GetString(readBytes);
 
-                //version check
-                if (CheckVersion(context))
+                //parse as json
+                var jsonBody = JObject.Parse(readString);
+
+
+                if (request.HttpMethod == "POST")
                 {
-                    //Login
-                    var headers = request.Headers.AllKeys;
-                    if (headers.Contains("Login"))
+
+                    //version check
+                    if (CheckVersion(context))
                     {
-                        Login(context);
-                        
+                        //Login
+                        if (jsonBody["LoginMethod"].ToString() == "anonymous")
+                        {
+                            Login(context, jsonBody);
+
+                        }
+                        //register
+                        else if (headers.Contains("Register"))
+                        {
+
+                        }
                     }
-                    //register
-                    else if (headers.Contains("Register"))
-                    {
-                        
-                    }
+
                 }
-
+                response.Close();
             }
+            else
+            {
+                response.StatusCode = (int) HttpStatusCode.BadRequest;
+                response.Close();
+            }
+            
 
-            //Enable CORS so player could acces this server
-            //response.AddHeader("Access-Control-Allow-Origin", "*");
-            response.Close();
         }
 
         /// <summary>
@@ -164,28 +186,25 @@ namespace FoolOnlineServer.AccountsServer
         }
 
 
-        private static bool Login(HttpListenerContext context)
+        private static bool Login(HttpListenerContext context, JObject jsonBody)
         {
             HttpListenerRequest request = context.Request;
             HttpListenerResponse response = context.Response;
 
-            string loginMethod = request.Headers["Login"];
+            
+
+            string loginMethod = jsonBody["LoginMethod"].ToString();
 
             switch (loginMethod)
             {
                 case "anonymous":
                     if (anonymousAllowed)
                     {
-                        if (request.Headers.AllKeys.Contains("Nickname"))
+                        if (jsonBody["UserId"].ToString() != "")
                         {
                             //validate nickname
-                            string nickname = request.Headers["Nickname"];
-                            if (nickname.Length == 0)
-                            {
-                                response.StatusCode = (int)HttpStatusCode.Forbidden;
-                                response.Headers.Add("Info", "Nickname can't be empty");
-                                return false;
-                            }
+                            string nickname = jsonBody["UserId"].ToString();
+
                             //validation ok
                             response.StatusCode = (int)HttpStatusCode.OK;
                             //send game server endpoint

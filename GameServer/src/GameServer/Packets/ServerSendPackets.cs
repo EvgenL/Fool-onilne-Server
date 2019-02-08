@@ -164,7 +164,7 @@ namespace FoolOnlineServer.GameServer.Packets
             buffer.WriteString(user.UserId);
 
             //Add client's display name
-            buffer.WriteString(user.Nickname);
+            buffer.WriteStringUnicode(user.Nickname);
 
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());
@@ -283,7 +283,7 @@ namespace FoolOnlineServer.GameServer.Packets
                 int slotN = (room.GetSlotN(playerId));
                 buffer.WriteInteger(slotN);
                 //Write player's nickname
-                buffer.WriteString(playerNicknames[slotN]);
+                buffer.WriteStringUnicode(playerNicknames[slotN]);
             }
 
             //Add maxPlayers
@@ -311,7 +311,7 @@ namespace FoolOnlineServer.GameServer.Packets
             buffer.WriteInteger(slotN);
 
             //Add nickname
-            buffer.WriteString(GameServer.GetClient(playerIdWhoJoined).Nickname);
+            buffer.WriteStringUnicode(GameServer.GetClient(playerIdWhoJoined).Nickname);
 
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());
