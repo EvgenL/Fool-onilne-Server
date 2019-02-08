@@ -665,9 +665,10 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                         playersPass[i] = false;
                     }
 
-                    // if table is full and beaten
+                    // if table is full and beaten 
                     if (AllCardsBeaten() && 
-                        (cardsOnTable.Count >= 6 || (turnN == 1 && cardsOnTable.Count >= MAX_CARDS_FIRST_ATTACK)))
+                        ((cardsOnTable.Count >= 6 || (turnN == 1 && cardsOnTable.Count >= MAX_CARDS_FIRST_ATTACK))
+                        || playerHands[slotN].Count == 0))
                     {
                         //send beaten
                         foreach (var playerId in PlayerIds)
@@ -677,12 +678,11 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                         NextTurnDelay();
 
                         TableToDiscard();
-
                     }
                 }
                 else //if defender DID gave up an attack
                 {
-                    //set every player who has cards but defender to no-pass
+                    //set every player but defender who has cards to no-pass
                     for (int i = 0; i < MaxPlayers; i++)
                     {
                         if (i == defender.SlotInRoom || playerHands[slotN].Count == 0) continue;
