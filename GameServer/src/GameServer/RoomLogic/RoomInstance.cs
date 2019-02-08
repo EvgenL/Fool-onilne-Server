@@ -321,29 +321,33 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             //if was playing: end game
             if (State == RoomState.Playing)
             {
-                //todo //if player not won!!!!!!!!!!!!!!!
-                //divide rewards
-                double betLeft = bet - (bet / (playersWinningOrder.Count + 1));
-                int playersNotWon = MaxPlayers - playersWinningOrder.Count;
-                foreach (var playierId in PlayerIds)
+                //if player not won
+                if (!playersWon[client.SlotInRoom])
                 {
-                    if (!playersRewards.ContainsKey(playierId))
+                    //divide rewards
+                    double betLeft = bet - (bet / (playersWinningOrder.Count));
+                    int playersNotWon = MaxPlayers - playersWinningOrder.Count + 1;
+                    foreach (var playierId in PlayerIds)
                     {
-                        playersRewards.Add(playierId, betLeft / playersNotWon);
+                        if (!playersRewards.ContainsKey(playierId))
+                        {
+                            playersRewards.Add(playierId, betLeft / playersNotWon);
+                        }
                     }
-                }
 
-                //Send everybody endgame message
-                foreach (var playerId in PlayerIds)
-                {
-                    ServerSendPackets.Send_EndGameGiveUp(playerId, leftPlayerId, playersRewards);
+                    //Send everybody endgame message
+                    foreach (var playerId in PlayerIds)
+                    {
+                        ServerSendPackets.Send_EndGameGiveUp(playerId, leftPlayerId, playersRewards);
+                    }
+                    ClearLists();
+
+                    CheckEverybobyJoined();
                 }
-                ClearLists();
             }
 
             Log.WriteLine("Player left room " + client, this);
 
-            CheckEverybobyJoined();
 
             if (ConnectedPlayersN == 0)
             {
@@ -700,17 +704,17 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                 }
             }
 
-            //check player's win conditions
-            int playerSlotN = GetSlotN(playerUpdatedTableId);
-            if (talon.Count == 0 && playerHands[playerSlotN].Count == 0)
-            {
-                PlayerWon(playerUpdatedTableId);
-            }
 
-            if (CheckGameEndConditions())
+            //check player's win conditions
+            foreach (var player in clientsInRoom)
             {
-                int foolSlotN = playersWon.ToList().IndexOf(false);
-                EndGameFool(clientsInRoom[foolSlotN]);
+                // if player not left and
+                // if player still not marked as won but has no cards on empty talon
+                if (player != null && !playersWon[player.SlotInRoom] 
+                    && talon.Count == 0 && playerHands[player.SlotInRoom].Count == 0)
+                {
+                    PlayerWon(player.ConnectionId);
+                }
             }
         }
 
@@ -720,8 +724,9 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// <param name="connectionId">Id of player who won</param>
         private void PlayerWon(long connectionId)
         {
-
             int playerSlotN = GetSlotN(connectionId);
+            if (playersWon[playerSlotN]) return;
+
             playersWon[playerSlotN] = true;
 
             playersWinningOrder.Push(GetClient(connectionId));
@@ -997,12 +1002,13 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
         private void NextTurn()
         {
-
+            
             if (State != RoomState.Playing) return;
 
             Log.WriteLine("Next turn", this);
 
             turnN++;
+            
 
             GiveCardsToPlayers();
 
@@ -1396,6 +1402,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
             int leftSlotN = rightSlotN;
 
+            // find next player who not still won
             do
             {
                 leftSlotN = (leftSlotN + 1) % MaxPlayers;
@@ -1412,6 +1419,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// </summary>
         private bool CheckGameEndConditions()
         {
+
             if (talon.Count == 0)
             {
                 //get numbers of players who not won
@@ -1424,8 +1432,13 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                     }
                 }
 
+                //only one fool left then end game
                 if (notWon == 1)
+                {
+                    int foolSlotN = playersWon.ToList().IndexOf(false);
+                    EndGameFool(clientsInRoom[foolSlotN]);
                     return true;
+                }
             }
 
             return false;
