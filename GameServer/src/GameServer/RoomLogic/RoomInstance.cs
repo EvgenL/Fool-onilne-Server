@@ -1,4 +1,11 @@
-﻿using System;
+﻿
+
+
+// DEFINES
+//#define TEST_MODE_TWOCARDS_TWOCARDS // if defined will give players only two cards at game start
+
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -9,7 +16,6 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 {
     public class RoomInstance : IDisposable
     {
-        private const bool TEST_MODE = true;
 
         #region Constants and enum
 
@@ -325,7 +331,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                 if (!playersWon[client.SlotInRoom])
                 {
                     //divide rewards
-                    double betLeft = bet - (bet / (playersWinningOrder.Count));
+                    double betLeft = bet - (bet / (playersWinningOrder.Count + 1));
                     int playersNotWon = MaxPlayers - playersWinningOrder.Count + 1;
                     foreach (var playierId in PlayerIds)
                     {
@@ -1234,10 +1240,9 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                 //if you aldeary have 6+ cards then you won't take any more on this turn
                 int recieverSlotN = GetSlotN(recieverPlayer);
 
-                if (TEST_MODE)
-                {
+#if TEST_MODE_TWOCARDS
                     MAX_DRAW_CARDS = 2;
-                }
+#endif
                 int cardsToDraw = Math.Max(MAX_DRAW_CARDS - playerHands[recieverSlotN].Count, 0);
                 cardsToDraw = Math.Min(cardsToDraw, talon.Count);
 
@@ -1266,10 +1271,9 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         private void MixTalon()
         {
 
-            if (TEST_MODE)
-            {
+#if TEST_MODE_TWOCARDS
                 DeckSize = MaxPlayers * 2;
-            }
+#endif
 
             //Create sorted deck
             List<string> deck = new List<string>(DeckSize);
@@ -1325,6 +1329,12 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                 break;
             }
             talon = new Stack<string>(DeckSize);
+
+            if (trumpCard == null)
+            {
+                trumpCard = tempTalon[0];
+                tempTalon.Remove(trumpCard);
+            }
 
             //put trump as very last card of talon
             talon.Push(trumpCard);
@@ -1444,9 +1454,9 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             return false;
         }
 
-        #endregion
+#endregion
 
-        #region IDisposable
+#region IDisposable
 
         private void ReleaseUnmanagedResources()
         {
@@ -1470,7 +1480,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             ReleaseUnmanagedResources();
         }
 
-        #endregion
+#endregion
 
         public override string ToString()
         {

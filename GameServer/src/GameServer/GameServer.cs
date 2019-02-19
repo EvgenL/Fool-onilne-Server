@@ -89,30 +89,6 @@ namespace FoolOnlineServer.GameServer
             Log.WriteLine("Server started on port " + port, Instance);
         }
 
-        private void OnNewSessionConnected(WebSocketSession session)
-        {
-            
-            //Try assign socket to newly connected client if server's not full
-            for (int i = 0; i < Clients.Length; i++)
-            {
-                //Finding first free socket
-                if (!Clients[i].Online())
-                {
-                    sessionClientPairs.Add(session, Clients[i]);
-                    Clients[i].Session = session;
-                    Clients[i].ConnectionId = i; //Set connection index
-                    Clients[i].IP = session.RemoteEndPoint; //Client's ip
-                    Clients[i].Authorized = false;
-                    //todo Clients[i].IP = session.
-                    Log.WriteLine($"Client connected. Index: {i} IP: {session.RemoteEndPoint}", this); //TODO normal say function
-
-                    return; //Exit after succesfully assigned id to client
-                }
-            }
-
-            Log.WriteLine("Connection rejected from " + session.RemoteEndPoint + ". Server is full.", this);
-        }
-
         /// <summary>
         /// Client sends auth token
         /// This method checks if token is correct
@@ -150,6 +126,31 @@ namespace FoolOnlineServer.GameServer
             client.Nickname = token.Nickname;
             ServerSendPackets.Send_UpdateUserData(connectionId);
             return true;
+        }
+
+
+        private void OnNewSessionConnected(WebSocketSession session)
+        {
+
+            //Try assign socket to newly connected client if server's not full
+            for (int i = 0; i < Clients.Length; i++)
+            {
+                //Finding first free socket
+                if (!Clients[i].Online())
+                {
+                    sessionClientPairs.Add(session, Clients[i]);
+                    Clients[i].Session = session;
+                    Clients[i].ConnectionId = i; //Set connection index
+                    Clients[i].IP = session.RemoteEndPoint; //Client's ip
+                    Clients[i].Authorized = false;
+                    //todo Clients[i].IP = session.
+                    Log.WriteLine($"Client connected. Index: {i} IP: {session.RemoteEndPoint}", this); //TODO normal say function
+
+                    return; //Exit after succesfully assigned id to client
+                }
+            }
+
+            Log.WriteLine("Connection rejected from " + session.RemoteEndPoint + ". Server is full.", this);
         }
 
         /// <summary>
