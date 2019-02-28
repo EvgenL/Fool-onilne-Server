@@ -2,6 +2,7 @@
 using System.Linq;
 using Evgen.Byffer;
 using FoolOnlineServer.GameServer.RoomLogic;
+using FoolOnlineServer.src.GameServer;
 using Logging;
 
 namespace FoolOnlineServer.GameServer.Packets
@@ -65,10 +66,10 @@ namespace FoolOnlineServer.GameServer.Packets
         public static void SendDataTo(long connectionId, byte[] data)
         {
             //check if client's online
-            Client client = GameServer.GetClient(connectionId);
+            Client client = ClientManager.GetConnectedClient(connectionId);
             if (!client.Online())
             {
-                Log.WriteLine($"ERROR: Tried to send data to client {GameServer.GetClient(connectionId)} who isn't online. ", typeof(ServerSendPackets));
+                Log.WriteLine($"ERROR: Tried to send data to client {client} who isn't online. ", typeof(ServerSendPackets));
                 return;
             }
 
@@ -79,7 +80,7 @@ namespace FoolOnlineServer.GameServer.Packets
             //writing the data
             buffer.WriteBytes(data);
 
-            Log.WriteLine($"Sent: {(SevrerPacketId)data[0]} to client " + GameServer.GetClient(connectionId), typeof(ServerSendPackets));
+            Log.WriteLine($"Sent: {(SevrerPacketId)data[0]} to client " + client, typeof(ServerSendPackets));
 
 
             client.Session.Send(buffer.ToArray(), 0, buffer.Length());
@@ -94,7 +95,7 @@ namespace FoolOnlineServer.GameServer.Packets
             //Loop through all the clients
             for (int i = 0; i < StaticParameters.MaxClients; i++)
             {
-                Client client = GameServer.GetClient(i);
+                Client client = ClientManager.GetConnectedClient(i);
 
                 if (client.Online())
                 {
@@ -144,7 +145,7 @@ namespace FoolOnlineServer.GameServer.Packets
             SendDataTo(connectionId, buffer.ToArray());
 
             //Disconnect client from server
-            GameServer.GetClient(connectionId).Disconnect("Bad auth token");
+            ClientManager.GetConnectedClient(connectionId).Disconnect("Bad auth token");
 
         }
 
@@ -156,7 +157,7 @@ namespace FoolOnlineServer.GameServer.Packets
             //Add packet id
             buffer.WriteLong((long)SevrerPacketId.UpdateUserData);
 
-            Client user = GameServer.GetClient(connectionId);
+            Client user = ClientManager.GetConnectedClient(connectionId);
 
             //Add current connection id
             buffer.WriteLong(connectionId);
@@ -313,7 +314,7 @@ namespace FoolOnlineServer.GameServer.Packets
             buffer.WriteInteger(slotN);
 
             //Add nickname
-            buffer.WriteStringUnicode(GameServer.GetClient(playerIdWhoJoined).Nickname);
+            buffer.WriteStringUnicode(ClientManager.GetConnectedClient(playerIdWhoJoined).Nickname);
 
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());

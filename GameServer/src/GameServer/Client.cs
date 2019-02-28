@@ -30,6 +30,11 @@ namespace FoolOnlineServer.GameServer
         }
 
         /// <summary>
+        /// Class that handles byteArrays of data
+        /// </summary>
+        private static PacketHandler packetHandler = new PacketHandler();
+
+        /// <summary>
         /// Clien's display name (not unique)
         /// //todo register, store nicknames
         /// </summary>
@@ -55,7 +60,7 @@ namespace FoolOnlineServer.GameServer
         /// Session to where this client should write data
         /// </summary>
         public WebSocketSession Session;
-
+        
         /// <summary>
         /// Buffer for reading data
         /// </summary>
@@ -135,7 +140,7 @@ namespace FoolOnlineServer.GameServer
 
         public void OnNewDataReceived(byte[] data)
         {
-            ServerHandlePackets.HandleData(ConnectionId, data);
+            packetHandler.HandleData(ConnectionId, data);
         }
 
         /// <summary>

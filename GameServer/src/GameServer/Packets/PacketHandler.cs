@@ -2,6 +2,7 @@
 using Evgen.Byffer;
 using FoolOnlineServer.GameServer.RoomLogic;
 using FoolOnlineServer.src.GameServer;
+using FoolOnlineServer.src.GameServer.Packets;
 using Logging;
 
 namespace FoolOnlineServer.GameServer.Packets
@@ -9,9 +10,11 @@ namespace FoolOnlineServer.GameServer.Packets
     /// <summary>
     /// Class for handling packets sent by clients.
     /// The packets are defined in ClientSendPackets class of client's side.
+    /// This exact file is responsive for transpot-layer of packet handler
     /// </summary>
-    public static class ServerHandlePackets
+    class PacketHandler : PacketHandlerDataLayer
     {
+
         /// <summary>
         /// Packet id's. Gets converted to long and send at beginning of each packet
         /// Ctrl+C, Ctrl+V between ServerHandlePackets on server and ClientSendPackets on client
@@ -37,11 +40,23 @@ namespace FoolOnlineServer.GameServer.Packets
             CoverCardOnTable,
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public PacketHandler()
+        {
+            // init methods on start
+            InitPackets();
+        }
+
         private delegate void Packet(long connectionId, byte[] data);
 
         private static Dictionary<long, Packet> packets;
 
-        private static void InitPackets()
+        /// <summary>
+        /// ties methods to an enum ClientPacketId
+        /// </summary>
+        private void InitPackets()
         {
             packets = new Dictionary<long, Packet>();
 
@@ -69,14 +84,8 @@ namespace FoolOnlineServer.GameServer.Packets
         /// </summary>
         /// <param name="connectionId">ConnectionId of client who sent data</param>
         /// <param name="data">Data represented by an array of bytes</param>
-        public static void HandleData(long connectionId, byte[] data)
+        public void HandleData(long connectionId, byte[] data)
         {
-            //init messages if first call
-            if (packets == null)
-            {
-                InitPackets();
-            }
-
             //Get client who sent data
             Client client = ClientManager.GetConnectedClient(connectionId);
 
@@ -113,7 +122,7 @@ namespace FoolOnlineServer.GameServer.Packets
                 if (packetLength <= clientBuffer.Length() - 8)
                 {
                     clientBuffer.ReadLong(); //read packet length
-                    data = clientBuffer.ReadBytes((int)packetLength);
+                    data = clientBuffer.ReadBytes((int) packetLength);
 
                     //process packet
                     HandleDataPackets(connectionId, data);
@@ -144,7 +153,7 @@ namespace FoolOnlineServer.GameServer.Packets
         /// Called by HandleData
         /// Proceeds data by calling Packet_MethodName methods
         /// </summary>
-        private static void HandleDataPackets(long connectionId, byte[] data)
+        private void HandleDataPackets(long connectionId, byte[] data)
         {
             //Add our data to buffer
             ByteBuffer buffer = new ByteBuffer();
@@ -159,146 +168,30 @@ namespace FoolOnlineServer.GameServer.Packets
             {
                 //Log packet id
                 Client client = ClientManager.GetConnectedClient(connectionId);
-                Log.WriteLine($"{client} sent {(ClientPacketId)data[0]}", typeof(ServerHandlePackets));
+                Log.WriteLine($"{client} sent {(ClientPacketId) data[0]}", typeof(PacketHandler));
 
                 //check if client is authorized
-                if ((ClientPacketId) data[0] != ClientPacketId.Authorize)
+                if (!client.Authorized)
                 {
-                    if (!client.Authorized)
+                    // if he doenst sent authorize this time
+                    if ((ClientPacketId)data[0] != ClientPacketId.Authorize)
                     {
                         ServerSendPackets.Send_ErrorBadAuthToken(connectionId);
-
-                        return;
                     }
                 }
-                //Call method tied to a Packet by InitPackets() method
-                packet.Invoke(connectionId, data);
+                else // if was authorized ok
+                {
+                    //Call method tied to a Packet by InitPackets() method
+                    packet.Invoke(connectionId, data);
+                }
+
             }
             else
             {
-                Log.WriteLine("Wrong packet: " + packetId, typeof(ServerHandlePackets));
+                Log.WriteLine("Wrong packet: " + packetId, typeof(PacketHandler));
             }
         }
 
 
-        ////////////////////////////DATA PACKETS////////////////////////////
-        ////////////////////////////DATA PACKETS////////////////////////////
-        ////////////////////////////DATA PACKETS////////////////////////////
-
-
-        private static void Packet_Authorize(long connectionId, byte[] data)
-        {
-            ByteBuffer buffer = new ByteBuffer();
-            buffer.WriteBytes(data);
-
-            //skip packet id
-            buffer.ReadLong();
-
-            string token = buffer.ReadString();
-
-            if (int.TryParse(token, out int tokenHash))
-            {
-                GameServer.AuthorizeClient(connectionId, tokenHash);
-            }
-            else
-            {
-                ServerSendPackets.Send_ErrorBadAuthToken(connectionId);
-            }
-        }
-
-        private static void Packet_CreateRoom(long connectionId, byte[] data)
-        {
-            //Add our data to buffer
-            ByteBuffer buffer = new ByteBuffer();
-            buffer.WriteBytes(data);
-
-            //skip packet id
-            buffer.ReadLong();
-
-            //Read max players
-            int maxPlayers = buffer.ReadInteger();
-            //Read deckSize players
-            int deckSize = buffer.ReadInteger();
-
-            RoomManager.CreateRoom(connectionId, maxPlayers, deckSize);
-        }
-
-        private static void Packet_RefreshRoomList(long connectionId, byte[] data)
-        {
-            RoomManager.RefreshRoomList(connectionId);
-        }
-        private static void Packet_JoinRoom(long connectionId, byte[] data)
-        {
-            //Add our data to buffer
-            ByteBuffer buffer = new ByteBuffer();
-            buffer.WriteBytes(data);
-
-            //skip packet id
-            buffer.ReadLong();
-
-            //Read room id
-            long roomId = buffer.ReadLong();
-
-            RoomManager.JoinRoom(connectionId, roomId);
-        }
-
-        private static void Packet_JoinRandom(long connectionId, byte[] data)
-        {
-            RoomManager.JoinRandom(connectionId);
-        }
-
-        private static void Packet_GiveUp(long connectionId, byte[] data)
-        {
-            RoomManager.GiveUp(connectionId);
-        }
-        private static void Packet_LeaveRoom(long connectionId, byte[] data)
-        {
-            RoomManager.LeaveRoom(connectionId);
-        }
-
-        private static void Packet_GetReady(long connectionId, byte[] data)
-        {
-            RoomManager.GetReady(connectionId);
-        }
-
-        private static void Packet_GetNotReady(long connectionId, byte[] data)
-        {
-            RoomManager.GetNotReady(connectionId);
-        }
-
-        private static void Packet_DropCardOnTable(long connectionId, byte[] data)
-        {
-            ByteBuffer buffer = new ByteBuffer();
-            buffer.WriteBytes(data);
-
-            //Skip packet id
-            buffer.ReadLong();
-
-            //Read card code
-            string cardCode = buffer.ReadString();
-
-            RoomManager.DropCardOnTable(connectionId, cardCode);
-        }
-
-        private static void Packet_Pass(long connectionId, byte[] data)
-        {
-            RoomManager.Pass(connectionId);
-        }
-
-        private static void Packet_CoverCardOnTable(long connectionId, byte[] data)
-        {
-            ByteBuffer buffer = new ByteBuffer();
-            buffer.WriteBytes(data);
-
-            //Skip packet id
-            buffer.ReadLong();
-
-            //Read card on table code
-            string cardOnTableCode = buffer.ReadString();
-            //Read card dropped code
-            string cardDroppedCode = buffer.ReadString();
-
-            RoomManager.CoverCardOnTable(connectionId, cardOnTableCode, cardDroppedCode);
-        }
     }
 }
