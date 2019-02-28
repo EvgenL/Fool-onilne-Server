@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using FoolOnlineServer.GameServer;
 using Logging;
@@ -13,6 +14,7 @@ namespace FoolOnlineServer.src.GameServer
     {
         /// <summary>
         /// ConnectionId-Client pairs
+        /// where ConnectionId is also a port of client's remote endpoint
         /// </summary>
         private static Dictionary<long, Client> clients = new Dictionary<long, Client>();
 
@@ -45,8 +47,7 @@ namespace FoolOnlineServer.src.GameServer
         /// </summary>
         public static Client GetConnectedClient(long connectionId)
         {
-            Client client = null;
-            clients.TryGetValue(connectionId, out client);
+            clients.TryGetValue(connectionId, out Client client);
 
             if (client == null)
             {

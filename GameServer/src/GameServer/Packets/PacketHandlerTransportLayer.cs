@@ -12,7 +12,7 @@ namespace FoolOnlineServer.GameServer.Packets
     /// The packets are defined in ClientSendPackets class of client's side.
     /// This exact file is responsive for transpot-layer of packet handler
     /// </summary>
-    class PacketHandler : PacketHandlerDataLayer
+    class PacketHandlerTransportLayer : PacketHandlerDataLayer
     {
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace FoolOnlineServer.GameServer.Packets
         /// <summary>
         /// Constructor
         /// </summary>
-        public PacketHandler()
+        public PacketHandlerTransportLayer()
         {
             // init methods on start
             InitPackets();
@@ -168,7 +168,7 @@ namespace FoolOnlineServer.GameServer.Packets
             {
                 //Log packet id
                 Client client = ClientManager.GetConnectedClient(connectionId);
-                Log.WriteLine($"{client} sent {(ClientPacketId) data[0]}", typeof(PacketHandler));
+                Log.WriteLine($"{client} sent {(ClientPacketId) data[0]}", typeof(PacketHandlerTransportLayer));
 
                 //check if client is authorized
                 if (!client.Authorized)
@@ -179,7 +179,7 @@ namespace FoolOnlineServer.GameServer.Packets
                         ServerSendPackets.Send_ErrorBadAuthToken(connectionId);
                     }
                 }
-                else // if was authorized ok
+                // else if was authorized ok
                 {
                     //Call method tied to a Packet by InitPackets() method
                     packet.Invoke(connectionId, data);
@@ -188,7 +188,7 @@ namespace FoolOnlineServer.GameServer.Packets
             }
             else
             {
-                Log.WriteLine("Wrong packet: " + packetId, typeof(PacketHandler));
+                Log.WriteLine("Wrong packet: " + packetId, typeof(PacketHandlerTransportLayer));
             }
         }
 

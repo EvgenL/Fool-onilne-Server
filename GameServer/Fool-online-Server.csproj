@@ -110,7 +110,7 @@
     <Compile Include="src\GameServer\GameServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="src\GameServer\Packets\ServerSendPackets.cs" />
-    <Compile Include="src\GameServer\Packets\PacketHandler.cs" />
+    <Compile Include="src\GameServer\Packets\PacketHandlerTransportLayer.cs" />
     <Compile Include="src\GameServer\StaticParameters.cs" />
     <Compile Include="src\GameServer\Token.cs" />
   </ItemGroup>

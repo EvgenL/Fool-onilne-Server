@@ -32,7 +32,7 @@ namespace FoolOnlineServer.GameServer
         /// <summary>
         /// Class that handles byteArrays of data
         /// </summary>
-        private static PacketHandler packetHandler = new PacketHandler();
+        private static PacketHandlerTransportLayer packetHandler = new PacketHandlerTransportLayer();
 
         /// <summary>
         /// Clien's display name (not unique)
