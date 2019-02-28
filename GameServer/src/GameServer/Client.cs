@@ -10,8 +10,25 @@ using SuperWebSocket;
 
 namespace FoolOnlineServer.GameServer
 {
-    public class Client
+
+    /// <summary>
+    /// Object represinting connected client
+    /// Wraps WebSocketSession object and prowides methods
+    /// to managing it
+    /// </summary>
+    class Client
     {
+        /// <summary>
+        /// Constructor 
+        /// </summary>
+        public Client(WebSocketSession session)
+        {
+            this.Session = session;
+            this.IP = session.RemoteEndPoint;
+            this.ConnectionId = IP.Port;
+            this.Authorized = false;
+        }
+
         /// <summary>
         /// Clien's display name (not unique)
         /// //todo register, store nicknames
@@ -32,12 +49,7 @@ namespace FoolOnlineServer.GameServer
         /// <summary>
         /// Client device's IP adress
         /// </summary>
-        public IPEndPoint IP;
-
-        /// <summary>
-        /// Socket to where this client should write data
-        /// </summary>
-        public TcpClient Socket;
+        public IPEndPoint IP { get; private set; }
 
         /// <summary>
         /// Session to where this client should write data
@@ -74,12 +86,24 @@ namespace FoolOnlineServer.GameServer
         /// <summary>
         /// Client's token
         /// </summary>
-        public Token AuthToken;
+        private Token AuthToken;
 
         /// <summary>
         /// Set to true if client did send token
         /// </summary>
         public bool Authorized;
+
+        /// <summary>
+        /// Authorize client and set Authorized flag to true
+        /// </summary>
+        /// <param name="token"></param>
+        public void Authorize(Token token)
+        {
+            this.Authorized = true;
+            this.AuthToken = token;
+            this.UserId = token.UserId;
+            this.Nickname = token.Nickname;
+        }
 
         /// <summary>
         /// Clean buffer. Create new if null.
@@ -124,14 +148,13 @@ namespace FoolOnlineServer.GameServer
             //If i was in room i disconnect. //TODO wait for reconnect if it was not intentional
             if (this.IsInRoom)
             {
-                RoomInstance room = RoomManager.GetRoomForPlayer(this.ConnectionId);
-                room.LeaveRoom(this.ConnectionId);
+                //if client was in room then wait for him to return
+                RoomManager.OnClientDisconnectedSuddenly(ConnectionId);
             }
 
             Session = null;
 
-            //if client was in room then wait for him to return
-            RoomManager.OnClientDisconnectedSuddenly(ConnectionId);
+            ClientManager.Disconnect(ConnectionId);
         }
 
         public override string ToString()

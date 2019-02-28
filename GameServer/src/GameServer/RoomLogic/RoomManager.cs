@@ -65,10 +65,10 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         public static void RefreshRoomList(long connectionId)
         {
             //Get rooms which are not full and not playing
-            List<RoomInstance> openRooms = ActiveRooms.Where(room => room.State == RoomInstance.RoomState.WaitingForPlayersToConnect).ToList();
+            List<RoomInstance> openRooms = GetAvailableRooms();
             if (openRooms.Count > MAX_ONE_PAKCKET_ROOM_LIST_SIZE)
             {
-                //filter first MAX_ONE_PAKCKET_ROOM_LIST_SIZE (50) rooms
+                //filter first MAX_ONE_PAKCKET_ROOM_LIST_SIZE (=50) rooms
                 int i = 0;
                 openRooms = openRooms.TakeWhile(_ => i < MAX_ONE_PAKCKET_ROOM_LIST_SIZE).ToList();
             }
@@ -76,6 +76,9 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             ServerSendPackets.Send_RoomList(connectionId, openRooms.ToArray());
         }
 
+        /// <summary>
+        /// Adds player to room
+        /// </summary>
         public static bool JoinRoom(long connectionId, long roomId)
         {
             //Getting not-full rooms

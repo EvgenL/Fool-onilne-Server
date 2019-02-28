@@ -31,6 +31,8 @@ namespace FoolOnlineServer.src.GameServer
         public string Nickname;
         public string PasswordHash;
 
+        public bool Used;
+
         public int TokenHash;
 
     }

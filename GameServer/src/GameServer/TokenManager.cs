@@ -11,6 +11,7 @@ namespace FoolOnlineServer.src.GameServer
         private const int UNUSED_TOKEN_EXPIRE_DELAY = 60000;
 
         private static HashSet<Token> notUsedTokens = new HashSet<Token>();
+        private static HashSet<Token> usedTokens = new HashSet<Token>();
 
         /// <summary>
         /// Set new token as unused 
@@ -39,6 +40,10 @@ namespace FoolOnlineServer.src.GameServer
             if (token != null)
             {
                 notUsedTokens.Remove(token);
+                usedTokens.Add(token);
+
+                token.Used = true;
+
                 return token;
             }
             else

@@ -683,7 +683,7 @@ namespace FoolOnlineServer.GameServer.Packets
             SendOnlyPacketId(connectionId, SevrerPacketId.Beaten);
         }
 
-        public static void Send_DefenderPicksCards(long connectionId, long defenderPlayerId, int defSlotN)
+        public static void Send_DefenderPicksCards(long connectionId, long defenderPlayerId, int defSlotN, int cardsOnTableN)
         {
             //New packet
             ByteBuffer buffer = new ByteBuffer();
@@ -695,6 +695,8 @@ namespace FoolOnlineServer.GameServer.Packets
             buffer.WriteLong(defenderPlayerId);
             //Add defender palyer slotN
             buffer.WriteInteger(defSlotN);
+            //Add number of cards on table
+            buffer.WriteInteger(cardsOnTableN);
 
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());

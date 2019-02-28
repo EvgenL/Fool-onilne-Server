@@ -96,6 +96,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="src\AccountsServer\AccountsServer.cs" />
+    <Compile Include="src\GameServer\ClientManager.cs" />
     <Compile Include="src\GameServer\TokenManager.cs" />
     <Compile Include="src\GameServer\Client.cs" />
     <Compile Include="src\GameServer\ConsoleThread.cs" />

@@ -301,7 +301,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             }
 
             //Check if all players joined
-            CheckEverybobyJoined();
+            PlayerNumberChanged();
 
             return true;
         }
@@ -324,10 +324,10 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             }
 
             //SEND WIN MESSAGE
-            //if was playing: end game
+            //if was playing
             if (State == RoomState.Playing)
             {
-                //if player not won
+                //if player not won: end game, count him as give up
                 if (!playersWon[client.SlotInRoom])
                 {
                     //divide rewards
@@ -348,9 +348,10 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                     }
                     ClearLists();
 
-                    CheckEverybobyJoined();
                 }
             }
+
+            PlayerNumberChanged();
 
             Log.WriteLine("Player left room " + client, this);
 
@@ -452,13 +453,21 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         public void OnClientDisconnectedSuddenly(long connectionId)
         {
             //TODO wait for client reconnect and differ OnClientDisconnectedSuddenly and GiveUp
-            LeaveRoom(connectionId);
             Log.WriteLine($"{GetClient(connectionId)} Suddenly disconnected from their room. Removing from room.", this);
+            LeaveRoom(connectionId);
         }
 
         public void GiveUp(long connectionId)
         {
-            LeaveRoom(connectionId);
+            if (State == RoomState.Playing)
+            {
+                //todo
+                LeaveRoom(connectionId);
+            }
+            else
+            {
+                LeaveRoom(connectionId);
+            }
         }
 
         /// <summary>
@@ -534,6 +543,14 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             if (attacker.ConnectionId != connectionId && !attackerPassedPriority)
             {
                 ServerSendPackets.Send_DropCardOnTableErrorNotYourTurn(connectionId, cardCode);
+                return;
+            }
+
+            //if player has no this card
+            int slotN = GetSlotN(connectionId);
+            if (!playerHands[slotN].Contains(cardCode))
+            {
+                Kick(connectionId, "Wrong card");
                 return;
             }
 
@@ -768,7 +785,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             }
 
             State = RoomState.PlayersGettingReady;
-            CheckEverybobyJoined();
+            PlayerNumberChanged();
         }
 
         /// <summary>
@@ -787,12 +804,13 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                 }
             }
 
-            cardsOnTable.Clear();
-
             foreach (var playerId in PlayerIds)
             {
-                ServerSendPackets.Send_DefenderPicksCards(playerId, defender.ConnectionId, defender.SlotInRoom);
+                ServerSendPackets.Send_DefenderPicksCards(playerId,
+                    defender.ConnectionId, defender.SlotInRoom, cardsOnTable.Count);
             }
+
+            cardsOnTable.Clear();
         }
 
         /// <summary>
@@ -813,9 +831,17 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             int slotN = GetSlotN(passedPlayerId);
             if (playersPass[slotN] || playersWon[slotN]) return;
 
+
             if (passedPlayerId == defender.ConnectionId)
             {
-                defenderGaveUpDefence = true;
+                if (!AllCardsBeaten())
+                {
+                    defenderGaveUpDefence = true; 
+                }
+                else
+                {
+                    return;
+                }
             }
             else if (passedClient == attacker)
             {
@@ -881,6 +907,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             {
                 //TODO send cant cover
                 //ServerSendPackets.Send_CantCoverThisCard(connectionId, cardCodeOnTable, cardCodeDropped);
+                return;
             }
 
             if (CanCoverThisCardWith(cardCodeOnTable, cardCodeDropped))
@@ -920,26 +947,21 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             bool cardOnTableIsTrump = CardUtil.Suit(trumpCard) == CardUtil.Suit(cardCodeOnTable);
             bool droppedCardIsTrump = CardUtil.Suit(trumpCard) == CardUtil.Suit(cardCodeDropped);
 
-            if (cardOnTableIsTrump)
+            if (cardOnTableIsTrump && droppedCardIsTrump
+                 || !cardOnTableIsTrump && !droppedCardIsTrump)
             {
-                if (droppedCardIsTrump)
-                {
-                    return CardUtil.Value(cardCodeOnTable) < CardUtil.Value(cardCodeDropped);
-                }
-
-                // else if dropped card is not trump
-                return false;
+                return CardUtil.Suit(cardCodeOnTable) == CardUtil.Suit(cardCodeDropped)
+                       && CardUtil.Value(cardCodeOnTable) < CardUtil.Value(cardCodeDropped);
             }
 
-            //else if card on table is not trump
-
-            if (droppedCardIsTrump)
+            if (!cardOnTableIsTrump && droppedCardIsTrump)
             {
                 return true;
             }
-
-            // else if dropped card is not trump
-            return CardUtil.Value(cardCodeOnTable) < CardUtil.Value(cardCodeDropped);
+            //else if (cardOnTableIsTrump && !droppedCardIsTrump)
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -1047,7 +1069,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// Checks if everybody joined.
         /// If yes then tells player to click their 'ready' buttons
         /// </summary>
-        private void CheckEverybobyJoined()
+        private void PlayerNumberChanged()
         {
             //if everybody is joined
             if (ConnectedPlayersN == MaxPlayers)
@@ -1060,7 +1082,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                     GetClient(playerId).IsReady = false;
                 }
             }
-            else if (ConnectedPlayersN + 1 == MaxPlayers) //if not
+            else //if not
             {
                 //Players get unready
                 State = RoomState.WaitingForPlayersToConnect;

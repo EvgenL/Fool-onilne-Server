@@ -10,7 +10,6 @@
 
 
 
-
 using System;
 using System.Configuration;
 using System.Linq;
@@ -29,9 +28,6 @@ using SuperWebSocket;
 
 namespace FoolOnlineServer.AccountsServer
 {
-
-
-
     /// <summary>
     /// Server which manages validation of client accounts
     /// and sends them to gameserver
@@ -117,9 +113,6 @@ namespace FoolOnlineServer.AccountsServer
         /// </summary>
         private void OnNewDataReceived(WebSocketSession session, byte[] data)
         {
-
-            Log.WriteLine("OnNewDataReceived\n" + Encoding.Unicode.GetString(data), Instance);
-
             XElement body = XElement.Parse(Encoding.Unicode.GetString(data));
 
             //Check version

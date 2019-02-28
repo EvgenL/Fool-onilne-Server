@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Evgen.Byffer;
 using FoolOnlineServer.GameServer.RoomLogic;
+using FoolOnlineServer.src.GameServer;
 using Logging;
 
 namespace FoolOnlineServer.GameServer.Packets
@@ -77,7 +78,7 @@ namespace FoolOnlineServer.GameServer.Packets
             }
 
             //Get client who sent data
-            Client client = GameServer.GetClient(connectionId);
+            Client client = ClientManager.GetConnectedClient(connectionId);
 
             //Clean it's buffer
             client.CleanBuffer();
@@ -157,12 +158,12 @@ namespace FoolOnlineServer.GameServer.Packets
             if (packets.TryGetValue(packetId, out Packet packet))
             {
                 //Log packet id
-                Log.WriteLine($"{GameServer.GetClient(connectionId)} sent {(ClientPacketId)data[0]}", typeof(ServerHandlePackets));
+                Client client = ClientManager.GetConnectedClient(connectionId);
+                Log.WriteLine($"{client} sent {(ClientPacketId)data[0]}", typeof(ServerHandlePackets));
 
                 //check if client is authorized
                 if ((ClientPacketId) data[0] != ClientPacketId.Authorize)
                 {
-                    Client client = GameServer.GetClient(connectionId);
                     if (!client.Authorized)
                     {
                         ServerSendPackets.Send_ErrorBadAuthToken(connectionId);
@@ -203,19 +204,6 @@ namespace FoolOnlineServer.GameServer.Packets
             {
                 ServerSendPackets.Send_ErrorBadAuthToken(connectionId);
             }
-        }
-        
-        private static void Packet_ThankYou(long connectionId, byte[] data)
-        {
-            //Add our data to buffer
-            ByteBuffer buffer = new ByteBuffer();
-            buffer.WriteBytes(data);
-
-            //skip packet id
-            buffer.ReadLong();
-            string message = buffer.ReadString();
-            Log.WriteLine(GameServer.GetClient(connectionId) + " says: " + message, typeof(ServerHandlePackets));
-
         }
 
         private static void Packet_CreateRoom(long connectionId, byte[] data)

@@ -41,18 +41,6 @@ namespace FoolOnlineServer.GameServer
         /// </summary>
         private WebSocketServer webSocketServer;
 
-        /// <summary>
-        /// Slots for clients.
-        /// Stores both busy and empty slots.
-        /// </summary>
-        private static Client[] Clients;
-
-        private static readonly Dictionary<WebSocketSession, Client> sessionClientPairs =
-            new Dictionary<WebSocketSession, Client>();
-
-        private static Dictionary<string, Client> tokenClientPairs 
-            = new Dictionary<string, Client>();
-
         //todo private static HashSet<Client> Clients;
 
         /// <summary>
@@ -60,13 +48,6 @@ namespace FoolOnlineServer.GameServer
         /// </summary>
         public static void ServerStart(int port)
         {
-            //Init client list
-            Clients = new Client[StaticParameters.MaxClients];
-            for (int i = 0; i < StaticParameters.MaxClients; i++)
-            {
-                Clients[i] = new Client();
-            }
-
             //Creating a new server instance
             Instance.webSocketServer = new WebSocketServer();
 
@@ -100,38 +81,40 @@ namespace FoolOnlineServer.GameServer
         /// <returns>true on succesful connect, false on fail</returns>
         public static bool AuthorizeClient(long connectionId, int tokenHash)
         {
-            Client client = GetClient(connectionId);
+            Client client = ClientManager.GetConnectedClient(connectionId);
 
-            //If client was already authorized then ignore
+            // If client was already authorized then ignore
             if (client.Authorized)
             {
                 return true;
             }
 
-            //get token from manager if exists
+            // get token from manager if exists
             Token token = TokenManager.UseToken(tokenHash);
 
-            //if token doesn't exist then send error
+            // if token doesn't exist then send error
             if (token == null)
             {
                 ServerSendPackets.Send_ErrorBadAuthToken(connectionId);
                 return false;
             }
 
-            //Authorized OK
-            client.Authorized = true;
-            client.AuthToken = token;
+            // Authorized OK
+            client.Authorize(token);
+            // Send OK message to client
             ServerSendPackets.Send_AuthorizedOk(connectionId);
-            client.UserId = token.UserId;
-            client.Nickname = token.Nickname;
             ServerSendPackets.Send_UpdateUserData(connectionId);
             return true;
         }
 
-
+        /// <summary>
+        /// Server's web socket callback on when somebody succesfully connected
+        /// Checks his auth token and proceed
+        /// </summary>
         private void OnNewSessionConnected(WebSocketSession session)
         {
-
+            ClientManager.CreateNewConnection(session);
+            /*
             //Try assign socket to newly connected client if server's not full
             for (int i = 0; i < Clients.Length; i++)
             {
@@ -144,13 +127,13 @@ namespace FoolOnlineServer.GameServer
                     Clients[i].IP = session.RemoteEndPoint; //Client's ip
                     Clients[i].Authorized = false;
                     //todo Clients[i].IP = session.
-                    Log.WriteLine($"Client connected. Index: {i} IP: {session.RemoteEndPoint}", this); //TODO normal say function
 
                     return; //Exit after succesfully assigned id to client
                 }
             }
 
             Log.WriteLine("Connection rejected from " + session.RemoteEndPoint + ". Server is full.", this);
+            */
         }
 
         /// <summary>
@@ -158,7 +141,7 @@ namespace FoolOnlineServer.GameServer
         /// </summary>
         private void OnNewDataReceived(WebSocketSession session, byte[] data)
         {
-            Client client = sessionClientPairs[session];
+            Client client = ClientManager.GetConnectedClient(session);
             client.OnNewDataReceived(data);
         }
 
@@ -173,14 +156,14 @@ namespace FoolOnlineServer.GameServer
             OnNewDataReceived(session, encoding.GetBytes(value));
         }
 
+        /// <summary>
+        /// Callback on client connection lost
+        /// Removes client from ClientManager's list
+        /// </summary>
         private void OnSessionClosed(WebSocketSession session, CloseReason value)
         {
-            if (sessionClientPairs.ContainsKey(session))
-            {
-                Client client = sessionClientPairs[session];
-                client.Disconnect();
-                sessionClientPairs.Remove(session);
-            }
+            Client client = ClientManager.GetConnectedClient(session);
+            client.Disconnect();
         }
 
         /// <summary>
@@ -191,38 +174,6 @@ namespace FoolOnlineServer.GameServer
             _instance.webSocketServer.Stop();
             _instance.webSocketServer = null;
         }
-
-        /// <summary>
-        /// Gets a client object with a specified index
-        /// </summary>
-        /// <param name="i">ConnctionID of the client</param>
-        /// <returns>Client</returns>
-        public static Client GetClient(long i)
-        {
-            return Clients[i];
-        }
-
-        /// <summary>
-        /// Returns a number of connections
-        /// </summary>
-        public static long GetOnlineClientsCount()
-        {
-            long result = 0;
-
-            //Loop through all the clients
-            for (int i = 0; i < StaticParameters.MaxClients; i++)
-            {
-                Client client = GameServer.GetClient(i);
-
-                if (client.Online())
-                {
-                    result++;
-                }
-            }
-
-            return result;
-        }
-
 
         #region IDisposable
 
