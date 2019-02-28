@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using FoolOnlineServer.GameServer.RoomLogic;
+using FoolOnlineServer.src.GameServer;
 using Logging;
 
 namespace FoolOnlineServer.GameServer
@@ -57,9 +58,9 @@ namespace FoolOnlineServer.GameServer
                 }
                 else if (line == "stats" || line == "stat")
                 {
-                    string text = "Players on server: "
-                                      + GameServer.GetOnlineClientsCount() + ". Active rooms: " + RoomManager.ActiveRooms.Count
-                        + "\nUptime: " + (DateTime.Now - startTime);
+                    string text = "Players on server: " + ClientManager.GetOnlineClientsCount() + ".\n"
+                        + "Active rooms: " + RoomManager.ActiveRooms.Count + "\n"
+                        + "Uptime: " + (DateTime.Now - startTime);
 
                     Log.WriteLine(text, typeof(GameServer));
                 }

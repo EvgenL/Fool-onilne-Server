@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using FoolOnlineServer.GameServer.Packets;
+using FoolOnlineServer.src.GameServer;
 using Logging;
 
 namespace FoolOnlineServer.GameServer.RoomLogic
@@ -277,7 +278,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
             //Add to player list
             PlayerIds.Add(connectionId);
-            clientsInRoom[slotN] = GameServer.GetClient(connectionId);
+            clientsInRoom[slotN] = ClientManager.GetConnectedClient(connectionId);
 
             Log.WriteLine($"{GetClient(connectionId)} joined room.", this);
 
