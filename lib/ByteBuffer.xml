@@ -1,0 +1,176 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ByteBuffer</name>
+    </assembly>
+    <members>
+        <member name="T:Evgen.Byffer.ByteBuffer">
+            <summary>
+            Class for converting data to byte array and back
+            </summary>
+        </member>
+        <member name="F:Evgen.Byffer.ByteBuffer.buff">
+            <summary>
+            Buffer list of bytes
+            </summary>
+        </member>
+        <member name="F:Evgen.Byffer.ByteBuffer.readBuff">
+            <summary>
+            Buffer for reading
+            </summary>
+        </member>
+        <member name="F:Evgen.Byffer.ByteBuffer.readPos">
+            <summary>
+            Pointer position for reading. Changes on read. Stays on peek.
+            </summary>
+        </member>
+        <member name="F:Evgen.Byffer.ByteBuffer.buffUpdated">
+            <summary>
+            State variable changed every time sometring is read or writen
+            </summary>
+        </member>
+        <member name="F:Evgen.Byffer.ByteBuffer.MaxStringLength">
+            <summary>
+            Safety
+            </summary>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.ToArray">
+            <summary>
+            Converts buffer list to array
+            </summary>
+            <returns>Converted value</returns>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.#ctor">
+            <summary>
+            Constructor for class. Initializes empty buffer;
+            </summary>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.GetReadPos">
+            <summary>
+            Get pointer read position
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.Count">
+            <summary>
+            Returns current bytes size of buffer
+            </summary>
+            <returns>Size</returns>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.Clear">
+            <summary>
+            Clears the buffer
+            </summary>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.Length">
+            <summary>
+            Returns value of how many bytes are left to read
+            </summary>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.WriteBytes(System.Byte[])">
+            <summary>
+            Adds byte array to buffer
+            </summary>
+            <param name="input">input byte array</param>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.WriteShort(System.Int16)">
+            <summary>
+            Adds short to buffer
+            </summary>
+            <param name="input">input short</param>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.WriteInteger(System.Int32)">
+            <summary>
+            Adds int to buffer
+            </summary>
+            <param name="input">int short</param>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.WriteFloat(System.Single)">
+            <summary>
+            Adds float to buffer
+            </summary>
+            <param name="input">float short</param>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.WriteDouble(System.Double)">
+            <summary>
+            Adds double to buffer
+            </summary>
+            <param name="input">input double</param>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.WriteLong(System.Int64)">
+            <summary>
+            Adds long to buffer
+            </summary>
+            <param name="input">input long</param>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.WriteString(System.String)">
+            <summary>
+            Adds string to buffer. Also writes int of string lenght before string.
+            </summary>
+            <param name="input">input string</param>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.WriteStringUnicode(System.String)">
+            <summary>
+            Adds string to buffer. Also writes int of string lenght before string.
+            </summary>
+            <param name="input">input string</param>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.ReadBytes(System.Int32,System.Boolean)">
+            <summary>
+            Read length of bytes from buffer
+            </summary>
+            <param name="length">Number of bytes to read</param>
+            <param name="peek">True - move pointer after reading. False - just read without affecting the pointer.</param>
+            <returns>Read byte array</returns>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.ReadInteger(System.Boolean)">
+            <summary>
+            Reads int from buffer
+            </summary>
+            <param name="peek">True - move pointer after reading. False - just read without affecting the pointer.</param>
+            <returns>Read int</returns>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.ReadString(System.Boolean)">
+            <summary>
+            Reads string from buffer. Also reads int of string length.
+            </summary>
+            <param name="peek">True - move pointer after reading. False - just read without affecting the pointer.</param>
+            <returns>Read string</returns>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.ReadStringUnicode(System.Boolean)">
+            <summary>
+            Reads string from buffer. Also reads int of string length.
+            </summary>
+            <param name="peek">True - move pointer after reading. False - just read without affecting the pointer.</param>
+            <returns>Read string</returns>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.ReadShort(System.Boolean)">
+            <summary>
+            Reads int from buffer
+            </summary>
+            <param name="peek">True - move pointer after reading. False - just read without affecting the pointer.</param>
+            <returns>Read int</returns>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.ReadFloat(System.Boolean)">
+            <summary>
+            Reads float from buffer
+            </summary>
+            <param name="peek">True - move pointer after reading. False - just read without affecting the pointer.</param>
+            <returns>Read float</returns>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.ReadLong(System.Boolean)">
+            <summary>
+            Reads long from buffer
+            </summary>
+            <param name="peek">True - move pointer after reading. False - just read without affecting the pointer.</param>
+            <returns>Read long</returns>
+        </member>
+        <member name="M:Evgen.Byffer.ByteBuffer.ReadDouble(System.Boolean)">
+            <summary>
+            Reads double from buffer
+            </summary>
+            <param name="peek">True - move pointer after reading. False - just read without affecting the pointer.</param>
+            <returns>Read double</returns>
+        </member>
+    </members>
+</doc>

@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using FoolOnlineServer.GameServer.Packets;
-using FoolOnlineServer.src.GameServer;
-using Logging;
+using Logginf;
 
 namespace FoolOnlineServer.GameServer.RoomLogic
 {
@@ -17,9 +16,9 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
         /// <summary>
         /// Active rooms. Both playing and waiting.
-        /// Contains pair <RoomId-RoomInstance>
+        /// Contains pair RoomId-RoomInstance
         /// </summary>
-        public static HashSet<RoomInstance> ActiveRooms = new HashSet<RoomInstance>();
+        public static Dictionary<long, RoomInstance> ActiveRooms = new Dictionary<long, RoomInstance>();
 
         /// <summary>
         /// Sent by player how wants to create a new room
@@ -46,7 +45,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                 return;
             }
 
-            RoomInstance room = CreateNewRoomInstance();
+            RoomInstance room = CreateNewRoomInstance(connectionId);
             room.MaxPlayers = maxPlayers;
             room.DeckSize = deckSize;
             room.HostId = connectionId;
@@ -65,16 +64,12 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// </summary>
         public static void RefreshRoomList(long connectionId)
         {
-            //Get rooms which are not full and not playing
-            List<RoomInstance> openRooms = GetAvailableRooms();
-            if (openRooms.Count > MAX_ONE_PAKCKET_ROOM_LIST_SIZE)
-            {
-                //filter first MAX_ONE_PAKCKET_ROOM_LIST_SIZE (=50) rooms
-                int i = 0;
-                openRooms = openRooms.TakeWhile(_ => i < MAX_ONE_PAKCKET_ROOM_LIST_SIZE).ToList();
-            }
+            // Get rooms which are not full and not playing
+            var openRooms = GetAvailableRooms();
+            // select 50 first
+            var openRoomsArray = openRooms.Take(50).ToArray();
 
-            ServerSendPackets.Send_RoomList(connectionId, openRooms.ToArray());
+            ServerSendPackets.Send_RoomList(connectionId, openRoomsArray);
         }
 
         /// <summary>
@@ -83,15 +78,15 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         public static bool JoinRoom(long connectionId, long roomId)
         {
             //Getting not-full rooms
-            List<RoomInstance> availableRooms = GetAvailableRooms();
+            var availableRooms = GetAvailableRooms().ToArray();
 
-            RoomInstance roomToJoin = availableRooms.Find(room => room.RoomId == roomId);
+            RoomInstance roomToJoin = availableRooms.Single(room => room.RoomId == roomId);
 
             //If this room is not present
             if (roomToJoin == null)
             {
                 //todo send fail to join
-                ServerSendPackets.Send_RoomList(connectionId, availableRooms.ToArray());
+                //ServerSendPackets.Send_FaliToJoin(connectionId);
                 return false;
             }
 
@@ -112,33 +107,32 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         public static void JoinRandom(long connectionId)
         {
             var client = ClientManager.GetConnectedClient(connectionId);
-            Log.WriteLine("[" + client + "] wants to join random room.", typeof(RoomManager));
 
             if (client.IsInRoom)
             {
-                Log.WriteLine("[" + client + "] is already in room. Abort.", typeof(RoomManager));
+                throw new Exception("Client is already in room");
                 return;
             }
 
             //Getting not-full rooms
-            List<RoomInstance> availableRooms = GetAvailableRooms();
+            RoomInstance[] availableRooms = GetAvailableRooms();
 
             RoomInstance randomRoom;
 
             //if no rooms
-            if (availableRooms.Count == 0)
+            if (availableRooms.Length == 0)
             {
                 Log.WriteLine("No available rooms.", typeof(RoomManager));
 
                 //Creting a new room
-                randomRoom = CreateRandomRoom();
+                randomRoom = CreateRandomRoom(connectionId);
                 randomRoom.HostId = connectionId;
             }
             else //if somebody's playing
             {
                 //Selecting a random room
                 //todo matchmaking
-                int randomNum = new Random().Next(0, availableRooms.Count);
+                int randomNum = new Random().Next(0, availableRooms.Length);
                 randomRoom = availableRooms[randomNum];
             }
 
@@ -154,22 +148,33 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// Selecting rooms which are not playing and have a free slot
         /// </summary>
         /// <returns>List of available rooms</returns>
-        public static List<RoomInstance> GetAvailableRooms()
+        public static RoomInstance[] GetAvailableRooms()
         {
-            return ActiveRooms.Where(room => room.ConnectedPlayersN < room.MaxPlayers
-                                                           && room.State == RoomInstance.RoomState
-                                                               .WaitingForPlayersToConnect).ToList();
+            List<RoomInstance> result = new List<RoomInstance>();
+
+            foreach (var room in ActiveRooms.Values)
+            {
+                if (room.State == RoomInstance.RoomState.WaitingForPlayersToConnect)
+                {
+                    result.Add(room);
+                }
+            }
+
+            return result.ToArray();
         }
 
-        private static RoomInstance CreateRandomRoom()
+        private static RoomInstance CreateRandomRoom(long id)
         {
-            long id = GetFreeRoomId();
-
+            // randomize room parameters
             Random r = new Random();
-            int randomPlayerCount = r.Next(2, 5); // 2 - 4 players in random room
+            int randomMaxPlayers = r.Next(2, 5); // 2 - 4 players in random room
             int randomDeckSize = 24 + 16 * r.Next(0, 3); //24-36-52 cards
-            RoomInstance room = new RoomInstance(id, randomPlayerCount, randomDeckSize);
-            ActiveRooms.Add(room);
+
+            // create room
+            RoomInstance room = CreateNewRoomInstance(id);
+            room.MaxPlayers = randomMaxPlayers;
+            room.DeckSize = randomDeckSize;
+
             Log.WriteLine("Created a random room. Id: " + id, typeof(RoomManager));
             return room;
         }
@@ -177,37 +182,13 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// <summary>
         /// Creates room and adds to active rooms
         /// </summary>
-        private static RoomInstance CreateNewRoomInstance()
+        private static RoomInstance CreateNewRoomInstance(long id)
         {
-            long id = GetFreeRoomId();
             RoomInstance room = new RoomInstance(id); 
-            ActiveRooms.Add(room);
+            ActiveRooms.Add(id, room);
             Log.WriteLine("Created a new room. Id: " + id, typeof(RoomManager));
             return room;
         }
-
-        /// <summary>
-        /// Get id for room which is not used
-        /// </summary>
-        /// <returns>Not used id. Returns 0 if every of [-long..+long] values are used.</returns>
-        private static long GetFreeRoomId()
-        {
-            HashSet<long> usedIds = new HashSet<long>();
-
-            foreach (var roomInstance in ActiveRooms)
-            {
-                usedIds.Add(roomInstance.RoomId);
-            }
-
-            for (long i = long.MinValue; i < long.MaxValue; i++)
-            {
-                if (!usedIds.Contains(i))
-                    return i;
-            }
-
-            return 0;
-        }
-
 
         /// <summary>
         /// If client's connection was destroyed we need make other players to wait him.
@@ -303,12 +284,15 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                 return null;
             }
 
-            return ActiveRooms.First(room => room.ContainsPlayer(client.ConnectionId));
+            return ActiveRooms[client.RoomId];
         }
 
+        /// <summary>
+        /// Delete room from list and dispose
+        /// </summary>
         public static void DeleteRoom(RoomInstance room)
         {
-            ActiveRooms.Remove(room);
+            ActiveRooms.Remove(room.RoomId);
             room.Dispose();
         }
     }

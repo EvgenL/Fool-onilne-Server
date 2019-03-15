@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Logging
+namespace Logginf
 {
     /// <summary>
     /// Static class for logging to console or (todo) to file

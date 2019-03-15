@@ -10,8 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using FoolOnlineServer.GameServer.Packets;
-using FoolOnlineServer.src.GameServer;
-using Logging;
+using Logginf;
 
 namespace FoolOnlineServer.GameServer.RoomLogic
 {
@@ -435,7 +434,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             {
                 if (client != null)
                 {
-                    nicknames[i] = client.Nickname;
+                    nicknames[i] = client.UserData.Nickname;
                     i++;
                 }
             }

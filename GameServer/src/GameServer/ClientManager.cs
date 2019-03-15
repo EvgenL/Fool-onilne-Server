@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using FoolOnlineServer.GameServer;
-using Logging;
+using Logginf;
 using SuperWebSocket;
 
-namespace FoolOnlineServer.src.GameServer
+namespace FoolOnlineServer.GameServer
 {
     internal static class ClientManager
     {
@@ -23,14 +19,17 @@ namespace FoolOnlineServer.src.GameServer
         /// </summary>
         public static void CreateNewConnection(WebSocketSession session)
         {
-            // instanciate new client object
-            Client client = new Client(session);
+            lock (clients)
+            {
+                // instanciate new client object
+                Client client = new Client(session);
 
-            // add to clients list
-            clients.Add(client.ConnectionId, client);
+                // add to clients list
+                clients.Add(client.ConnectionId, client);
 
-            Log.WriteLine($"Client connected. ConnectionId: {client.ConnectionId} IP: {session.RemoteEndPoint}",
-                typeof(ClientManager));
+                Log.WriteLine($"Client connected. ConnectionId: {client.ConnectionId} IP: {session.RemoteEndPoint}",
+                    typeof(ClientManager));
+            }
         }
 
         /// <summary>
@@ -40,6 +39,7 @@ namespace FoolOnlineServer.src.GameServer
         {
             // remove from clients list
             clients.Remove(connectionId);
+
         }
 
         /// <summary>
@@ -47,14 +47,19 @@ namespace FoolOnlineServer.src.GameServer
         /// </summary>
         public static Client GetConnectedClient(long connectionId)
         {
-            clients.TryGetValue(connectionId, out Client client);
-
-            if (client == null)
+            // sometimes this method is called earlier than Client object is created
+            // todo use named semaphore
+            lock (clients)
             {
-                throw new Exception("Trying to get not existing client. ConnectionId: " + connectionId);
-            }
+                clients.TryGetValue(connectionId, out Client client);
 
-            return client;
+                if (client == null)
+                {
+                    throw new Exception("Trying to get not existing client. ConnectionId: " + connectionId);
+                }
+
+                return client;
+            }
         }
 
         /// <summary>

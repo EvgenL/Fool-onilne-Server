@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Data;
 using FoolOnlineServer.GameServer;
-using Logging;
+using Logginf;
 using MySql.Data.MySqlClient;
 
 namespace FoolOnlineServer.Db
@@ -10,74 +11,138 @@ namespace FoolOnlineServer.Db
     /// </summary>
     class DatabaseConnection //TODO add db
     {
-        #region Singleton Instance
-
-        private static readonly object padlock = new object();
-
-        private static DatabaseConnection _instance;
-
-        /// <summary>
-        /// Thread-safe singleton instance. Created on first use.
-        /// </summary>
-        public static DatabaseConnection Instance
+        private enum SqlCommandType
         {
-            get
-            {
-                lock (padlock)
-                {
-                    if (_instance == null)
-                    {
-                        _instance = new DatabaseConnection();
-                    }
-                    return _instance;
-                }
-            }
-            private set { }
+            ExecuteReader,
+            ExecuteNonQuery,
+            ExecuteScalar
         }
 
+        #region Open/close connection
+
+        private const string ConnectionString = "server=localhost;uid=root;pwd=;database=foolonline";
+
+        private static MySqlConnection presistentConnection;
+        private static MySqlDataReader presistentReader;
+
+        /// <summary>
+        /// Set true if some method reads out from reader
+        /// </summary>
+        private static bool ReaderIsBusy = false;
+        
+        /// <summary>
+        /// Opens new connection between server and db.
+        /// If connection was open - does nuthing
+        /// </summary>
+        /// <returns>Opened connetion. Null if inacessable.</returns>
+        private static void ConnectionOpen()
+        {
+            if (presistentConnection == null
+                || presistentConnection.State == ConnectionState.Closed
+                || presistentConnection.State == ConnectionState.Broken)
+            {
+                presistentConnection = new MySqlConnection();
+                presistentConnection.ConnectionString = ConnectionString;
+
+                try
+                {
+                    presistentConnection.Open();
+                }
+                catch (Exception e)
+                {
+                    Log.WriteLine("Database server is unacessable.", typeof(DatabaseConnection));
+                }
+
+            }
+        }
 
         #endregion
 
         /// <summary>
-        /// Connecton to mysql db server
+        /// Executes command with return of data reader
         /// </summary>
-        private MySqlConnection connection;
-
-        /// <summary>
-        /// Called first. Connects to DB
-        /// </summary>
-        public void MySQLInit()
+        /// <param name="command">command to execute</param>
+        /// <returns>data reader</returns>
+        public static MySqlDataReader ExecuteReader(MySqlCommand command)
         {
-            connection = new MySqlConnection();
-            connection.ConnectionString = StaticParameters.ConnetionString;
-
-            //SayReadAllAccounts();
-
-            //MySqlCommand command = new MySqlCommand("SELECT * FROM foolonline.accounts;", connection);
+            return (MySqlDataReader)ExecuteCommand(command, SqlCommandType.ExecuteReader);
+        }
+        /// <summary>
+        /// Executes command with no return
+        /// </summary>
+        /// <param name="command">command to execute</param>
+        public static void ExecuteNonQuery(MySqlCommand command)
+        {
+            ExecuteCommand(command, SqlCommandType.ExecuteNonQuery);
+        }
+        /// <summary>
+        /// Executes command with return of scalar object
+        /// </summary>
+        /// <param name="command">command to execute</param>
+        /// <returns>scalar</returns>
+        public static object ExecuteScalar(MySqlCommand command)
+        {
+            return ExecuteCommand(command, SqlCommandType.ExecuteScalar);
         }
 
         /// <summary>
-        /// Opens the connection between server and db.
+        /// Executes command 
         /// </summary>
-        /// <returns>Opened connetion. Null if inacessable.</returns>
-        public static MySqlConnection ConnectionOpen()
+        private static object ExecuteCommand(MySqlCommand command, SqlCommandType commandType)
         {
-            Log.WriteLine("Connecting...", typeof(DatabaseConnection));
+            // Connect to mysql if wasn't
+            ConnectionOpen();
+
+            // tie command to connetion
+            command.Connection = presistentConnection;
+
+            // try execute command
             try
             {
-                Instance.connection.Open();
+                switch (commandType)
+                {
+                    case SqlCommandType.ExecuteReader:
+                        presistentReader = command.ExecuteReader();
+                        ReaderIsBusy = true;
+                        return presistentReader;
+                        break;
+                    case SqlCommandType.ExecuteNonQuery:
+                        command.ExecuteNonQuery();
+                        break;
+                    case SqlCommandType.ExecuteScalar:
+                        return command.ExecuteScalar();
+                        break;
+                }
             }
             catch (Exception e)
             {
-                Log.WriteLine("Database server is unacessable.", typeof(DatabaseConnection));
-                return null;
+                // print if error occured 
+                Log.WriteLine(e.Message, typeof(DatabaseConnection));
             }
-            return Instance.connection;
+
+            return null;
         }
 
-        public static void ConnectionClose()
+        /// <summary>
+        /// Closes reader and sets readerBusy flag to false
+        /// SHOULD be called by method who got reader and
+        /// finished reading.
+        /// Reader.Close() should not be called by method who got reader and
+        /// </summary>
+        public static void CloseReader()
         {
-            Instance.connection.Close();
+            ReaderIsBusy = false;
+            presistentReader.Close();
+        }
+
+        /// <summary>
+        /// Tests if connection ok
+        /// If database doesn't exist 
+        /// then tries to create it
+        /// </summary>
+        public static void TestDb()
+        {
+
         }
     }
 }

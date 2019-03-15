@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using FoolOnlineServer.src.AccountsServer;
 
-namespace FoolOnlineServer.src.GameServer
+namespace FoolOnlineServer.GameServer
 {
     public static class TokenManager
     {
@@ -25,11 +24,21 @@ namespace FoolOnlineServer.src.GameServer
         }
 
         /// <summary>
-        /// Creates login token from only username
+        /// Creates login token from only username for anonymous login
         /// </summary>
-        public static Token CreateAnonymousToken(string username)
+        public static Token CreateAnonymousToken(string nickname)
         {
-            Token token = new Token(String.Empty, username, String.Empty);
+            Token token = new Token(nickname);
+            AcceptToken(token);
+            return token;
+        }
+
+        /// <summary>
+        /// Creates login token from registred user's data
+        /// </summary>
+        public static Token CreateTokenRegistredAccount(FoolUser user)
+        {
+            Token token = new Token(user);
             AcceptToken(token);
             return token;
         }
@@ -49,6 +58,18 @@ namespace FoolOnlineServer.src.GameServer
             else
             {
                 return null;
+            }
+        }
+
+        public static void DeleteToken(Token token)
+        {
+            if (notUsedTokens.Contains(token))
+            {
+                notUsedTokens.Remove(token);
+            }
+            if (usedTokens.Contains(token))
+            {
+                usedTokens.Remove(token);
             }
         }
 

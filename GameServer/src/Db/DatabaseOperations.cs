@@ -2,99 +2,108 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using Logging;
+using FoolOnlineServer.AccountsServer;
+using FoolOnlineServer.src.AccountsServer;
+using FoolOnlineServer.src.AccountsServer.Packets;
 using MySql.Data.MySqlClient;
 
 namespace FoolOnlineServer.Db
 {
     public static class DatabaseOperations
     {
-        public static void AddAccount(string username, string password, string email)
+        /// <summary>
+        /// Returns FoolUser object from database
+        /// returns null if not registred
+        /// </summary>
+        /// <param name="email">user's email</param>
+        public static FoolUser GetUserByEmail(string email)
         {
-            if (!TestEmail(email))
-            {
-                throw new Exception("Email contains wrong symbols");
-            }
+            // create new command
+            MySqlCommand command = new MySqlCommand();
+            command.CommandText = "SELECT * " +
+                                  "FROM foolonline.accounts " +
+                                  "WHERE Email=@email;";
 
-            //Connect to mysql and get connection object
-            MySqlConnection connection = DatabaseConnection.ConnectionOpen();
-
-            MySqlCommand command = connection.CreateCommand();
-            command.CommandText = "INSERT INTO `foolonline`.`accounts` " +
-                                  "(`Username`, `Password`, `Email`) " +
-                                  "VALUES (@username, @password, @email);";
-
-            string sha1pass = GetSha1(password);
-
-            command.Parameters.AddWithValue("@username", username);
-            command.Parameters.AddWithValue("@password", sha1pass);
             command.Parameters.AddWithValue("@email", email);
 
-            try
+            // execute
+            var reader = DatabaseConnection.ExecuteReader(command);
+            // if user doesn't exists
+            if (!reader.HasRows)
             {
-                int rowsAffected = command.ExecuteNonQuery();
-                Log.WriteLine($"Added user {email}.", typeof(DatabaseOperations));
-            }
-            catch (Exception e)
-            {
-                Log.WriteLine(e.Message, typeof(DatabaseOperations));
-            }
-            finally
-            {
-                //disconnect from mysql
-                DatabaseConnection.ConnectionClose();
-            }
-        }
-
-        #region Util methods to put in different calss TODO
-
-        /// <summary>
-        /// Creates sha1 from string
-        /// </summary>
-        /// <param name="text">input string</param>
-        /// <returns>sha1</returns>
-        private static string GetSha1(string text)
-        {
-            var sha1 = new SHA1Managed();
-            var plaintextBytes = Encoding.UTF8.GetBytes(text);
-            var hashBytes = sha1.ComputeHash(plaintextBytes);
-
-            var sb = new StringBuilder();
-            foreach (var hashByte in hashBytes)
-            {
-                sb.AppendFormat("{0:x2}", hashByte);
+                DatabaseConnection.CloseReader();
+                return null;
             }
 
-            var hashString = sb.ToString();
-            return hashString;
+            reader.Read();
+
+            // read from reader
+            FoolUser user = new FoolUser
+            {
+                UserId = reader.GetInt64("UserId"),
+                Nickname = reader.GetString("Nickname"),
+                Password = reader.GetString("Password"),
+                Email = reader.GetString("Email"),
+                Money = reader.GetDouble("Money")
+            };
+
+            DatabaseConnection.CloseReader();
+
+            return user;
         }
 
         /// <summary>
-        /// Test string by regexp for containing only letters and numbers
+        /// validates and adds new accunt to database.
         /// </summary>
-        private static bool TestSqlValue(string value)
+        public static AccountReturnCodes AddNewAccount(string nickname, string email, string password)
         {
-            //Begins with any letter or number, contains more than 3 and less than 32 symbols.
-            var match = Regex.Match(value, @"^[A-z|0-9]{3,32}");
-            return match.Success;
+            // validate form
+            var returnCode = ValidateNewAccount(nickname, email, password);
+            if (returnCode != AccountReturnCodes.Ok)
+            {
+                return returnCode;
+            }
+
+            // create new command
+            MySqlCommand command = new MySqlCommand();
+            command.CommandText = "INSERT INTO `foolonline`.`accounts` " +
+                                  "(`Nickname`, `Password`, `Email`) " +
+                                  "VALUES (@nickname, @password, @email);";
+
+            command.Parameters.AddWithValue("@nickname", nickname);
+            command.Parameters.AddWithValue("@password", password);
+            command.Parameters.AddWithValue("@email", email);
+
+
+            // execute
+            DatabaseConnection.ExecuteNonQuery(command);
+
+            return AccountReturnCodes.Ok;
         }
 
         /// <summary>
-        /// Test string for being an email
+        /// Validated new account data
         /// </summary>
-        private static bool TestEmail(string email)
+        private static AccountReturnCodes ValidateNewAccount(string nickname, string email, string password)
         {
-            try
-            {
-                var addr = new System.Net.Mail.MailAddress(email);
-                return addr.Address == email;
-            }
-            catch
-            {
-                return false;
-            }
+            // check nickname validity
+            if (!AccountsUtil.NicknameValid(nickname))
+                return AccountReturnCodes.NicknameIsInvalid;
+
+            // check email validity
+            if (!AccountsUtil.EmailIsValid(email))
+                return AccountReturnCodes.EmailIsInvalid;
+
+            // check email used
+            if (AccountsUtil.EmailUsed(email))
+                return AccountReturnCodes.EmailUsed;
+
+            // check password validity
+            if (!AccountsUtil.PasswordValid(password))
+                return AccountReturnCodes.PasswordIsInvalid;
+
+            return AccountReturnCodes.Ok;
         }
 
-        #endregion
     }
 }

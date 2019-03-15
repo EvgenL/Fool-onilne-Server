@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Evgen.Byffer;
-using FoolOnlineServer.GameServer.Packets;
+﻿using Evgen.Byffer;
 using FoolOnlineServer.GameServer.RoomLogic;
+using FoolOnlineServer.src.AccountsServer;
 
-namespace FoolOnlineServer.src.GameServer.Packets
+namespace FoolOnlineServer.GameServer.Packets
 {
     /// <summary>
     /// Contains methods called by HandlePacketsTransportLayer 
@@ -27,7 +22,7 @@ namespace FoolOnlineServer.src.GameServer.Packets
 
             if (int.TryParse(token, out int tokenHash))
             {
-                FoolOnlineServer.GameServer.GameServer.AuthorizeClient(connectionId, tokenHash);
+                AuthService.AuthorizeClientOnGameServer(connectionId, tokenHash);
             }
             else
             {

@@ -2,10 +2,11 @@
 using System.Net;
 using System.Net.Sockets;
 using Evgen.Byffer;
+using FoolOnlineServer.Db;
 using FoolOnlineServer.GameServer.Packets;
 using FoolOnlineServer.GameServer.RoomLogic;
-using FoolOnlineServer.src.GameServer;
-using Logging;
+using FoolOnlineServer.src.AccountsServer;
+using Logginf;
 using SuperWebSocket;
 
 namespace FoolOnlineServer.GameServer
@@ -35,16 +36,9 @@ namespace FoolOnlineServer.GameServer
         private static PacketHandlerTransportLayer packetHandler = new PacketHandlerTransportLayer();
 
         /// <summary>
-        /// Clien's display name (not unique)
-        /// //todo register, store nicknames
+        /// Clien's account data container
         /// </summary>
-        public string Nickname;
-
-        /// <summary>
-        /// Clien's registration name (unique)
-        /// //todo register, store idnames
-        /// </summary>
-        public string UserId;
+        public FoolUser UserData;
 
         /// <summary>
         /// Client's unique number
@@ -99,15 +93,21 @@ namespace FoolOnlineServer.GameServer
         public bool Authorized;
 
         /// <summary>
-        /// Authorize client and set Authorized flag to true
+        /// Amount of money on this account
+        /// </summary>
+        public double Money;
+
+        /// <summary>
+        /// Authorize client by token and set Authorized flag to true
         /// </summary>
         /// <param name="token"></param>
         public void Authorize(Token token)
         {
+            this.UserData = token.OwnerUser;
+
+            // set authorized status
             this.Authorized = true;
             this.AuthToken = token;
-            this.UserId = token.UserId;
-            this.Nickname = token.Nickname;
         }
 
         /// <summary>
@@ -160,6 +160,7 @@ namespace FoolOnlineServer.GameServer
             Session = null;
 
             ClientManager.Disconnect(ConnectionId);
+            TokenManager.DeleteToken(AuthToken);
         }
 
         public override string ToString()

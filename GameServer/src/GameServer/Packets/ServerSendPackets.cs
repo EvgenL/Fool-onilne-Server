@@ -2,8 +2,7 @@
 using System.Linq;
 using Evgen.Byffer;
 using FoolOnlineServer.GameServer.RoomLogic;
-using FoolOnlineServer.src.GameServer;
-using Logging;
+using Logginf;
 
 namespace FoolOnlineServer.GameServer.Packets
 {
@@ -157,16 +156,19 @@ namespace FoolOnlineServer.GameServer.Packets
             //Add packet id
             buffer.WriteLong((long)SevrerPacketId.UpdateUserData);
 
-            Client user = ClientManager.GetConnectedClient(connectionId);
+            Client client = ClientManager.GetConnectedClient(connectionId);
 
             //Add current connection id
             buffer.WriteLong(connectionId);
 
             //Add userId
-            buffer.WriteString(user.UserId);
+            buffer.WriteLong(client.UserData.UserId);
 
             //Add client's display name
-            buffer.WriteStringUnicode(user.Nickname);
+            buffer.WriteStringUnicode(client.UserData.Nickname);
+
+            //Add client's money
+            buffer.WriteDouble(client.UserData.Money);
 
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());
@@ -314,7 +316,8 @@ namespace FoolOnlineServer.GameServer.Packets
             buffer.WriteInteger(slotN);
 
             //Add nickname
-            buffer.WriteStringUnicode(ClientManager.GetConnectedClient(playerIdWhoJoined).Nickname);
+            var client = ClientManager.GetConnectedClient(playerIdWhoJoined);
+            buffer.WriteStringUnicode(client.UserData.Nickname);
 
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());

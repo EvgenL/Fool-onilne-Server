@@ -1,39 +1,61 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using FoolOnlineServer.src.AccountsServer;
 
-namespace FoolOnlineServer.src.GameServer
+namespace FoolOnlineServer.GameServer
 {
-    public sealed class Token
+    /// <summary>
+    /// Auth token
+    /// 1) Created by AccountsServer
+    /// 2) Saved in TokenManager as not used
+    /// 3) Sent to player
+    /// 4) Player uses it to enter GameServer
+    /// 5) GameServer asks TokenManager for validation
+    /// </summary>
+    public class Token
     {
-        public Token(string userId, string nickname, string passwordHash)
+        public enum AuthorizationMethod
         {
-            UserId = userId;
-            Nickname = nickname;
-            PasswordHash = passwordHash;
-
-            StringBuilder sb = new StringBuilder();
-            sb.Append(userId);
-            sb.Append(nickname);
-            sb.Append(passwordHash);
-            sb.Append((DateTime.Now - DateTime.MinValue).TotalSeconds);
-            TokenHash = sb.ToString().GetHashCode();
+            Email,
+            Anonymous,
+            OAuth
         }
 
-        public Token CreateAnonymous(string nickname)
-        {
-            return new Token(nickname.GetHashCode().ToString(), nickname, nickname);
-        }
-
-        public string UserId;
-        public string Nickname;
-        public string PasswordHash;
+        public FoolUser OwnerUser;
 
         public bool Used;
 
-        public int TokenHash;
+        public int TokenHash => this.GetHashCode();
+
+        public AuthorizationMethod authMethod;
+
+        /// <summary>
+        /// Anonymous token constructor
+        /// </summary>
+        public Token(string nickname)
+        {
+            // create new user object with specified nickname and random other values
+            this.OwnerUser = new FoolUser
+            {
+                Nickname = nickname,
+
+                UserId = DateTime.Now.Ticks,
+                Email = "",
+                Password = "",
+                Money = 0d
+        
+            };
+            this.authMethod = AuthorizationMethod.Anonymous;
+        }
+
+        /// <summary>
+        /// Registred user token constructor
+        /// </summary>
+        public Token(FoolUser user)
+        {
+            this.OwnerUser = user;
+            this.authMethod = AuthorizationMethod.Email;
+        }
 
     }
 }
