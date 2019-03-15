@@ -175,15 +175,8 @@ namespace FoolOnlineServer.Db
             ExecuteNonQuery(command);
 
             // create table
-            command.CommandText = "CREATE TABLE IF NOT EXISTS accounts(" +
-                                  "" +
-                                  "" +
-                                  "" +
-                                  "" +
-                                  ");";
+            command.CommandText = "CREATE TABLE IF NOT EXISTS `accounts` (\r   `UserId` bigint(20) unsigned NOT NULL AUTO_INCREMENT,\r   `Nickname` varchar(20) NOT NULL,\r   `Password` varchar(40) NOT NULL,\r   `Email` varchar(50) NOT NULL,\r   `Money` double unsigned DEFAULT \'0\',\r   `MoneyFrozen` double unsigned DEFAULT \'0\',\r   PRIMARY KEY (`UserId`,`Email`,`Nickname`),\r   UNIQUE KEY `ID_UNIQUE` (`UserId`),\r   UNIQUE KEY `Email_UNIQUE` (`Email`)\r ) ENGINE=InnoDB AUTO_INCREMENT=232 DEFAULT CHARSET=utf8mb4 COMMENT=\'Table for storing user account information\'";
             ExecuteNonQuery(command);
-
-
         }
     }
 }
