@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.Design;
 using System.Data;
 using FoolOnlineServer.GameServer;
 using Logginf;
@@ -20,7 +21,7 @@ namespace FoolOnlineServer.Db
 
         #region Open/close connection
 
-        private const string ConnectionString = "server=localhost;uid=root;pwd=;database=foolonline";
+        public const string ConnectionString = "server=localhost;uid=root;pwd=";
 
         private static MySqlConnection presistentConnection;
         private static MySqlDataReader presistentReader;
@@ -35,7 +36,7 @@ namespace FoolOnlineServer.Db
         /// If connection was open - does nuthing
         /// </summary>
         /// <returns>Opened connetion. Null if inacessable.</returns>
-        private static void ConnectionOpen()
+        private static bool ConnectionOpen()
         {
             if (presistentConnection == null
                 || presistentConnection.State == ConnectionState.Closed
@@ -47,12 +48,17 @@ namespace FoolOnlineServer.Db
                 try
                 {
                     presistentConnection.Open();
+                    return true;
                 }
                 catch (Exception e)
                 {
-                    Log.WriteLine("Database server is unacessable.", typeof(DatabaseConnection));
+                    Log.WriteLine("Can't open connection.", typeof(DatabaseConnection));
+                    return false;
                 }
-
+            }
+            else
+            {
+                return true;
             }
         }
 
@@ -137,11 +143,46 @@ namespace FoolOnlineServer.Db
 
         /// <summary>
         /// Tests if connection ok
+        /// </summary>
+        public static bool TestConnection()
+        {
+            // Connect to mysql if wasn't
+            if (!ConnectionOpen())
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+
+        }
+
+        /// <summary>
         /// If database doesn't exist 
         /// then tries to create it
         /// </summary>
-        public static void TestDb()
+        public static void TestIfDatabaseExists()
         {
+            MySqlCommand command = new MySqlCommand();
+
+            // create db
+            command.CommandText = "CREATE DATABASE IF NOT EXISTS foolonline;";
+            ExecuteNonQuery(command);
+
+            // select db
+            command.CommandText = "USE foolonline;";
+            ExecuteNonQuery(command);
+
+            // create table
+            command.CommandText = "CREATE TABLE IF NOT EXISTS accounts(" +
+                                  "" +
+                                  "" +
+                                  "" +
+                                  "" +
+                                  ");";
+            ExecuteNonQuery(command);
+
 
         }
     }

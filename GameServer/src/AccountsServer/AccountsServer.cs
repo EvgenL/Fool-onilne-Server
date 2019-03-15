@@ -69,7 +69,16 @@ namespace FoolOnlineServer.AccountsServer
 
         public static void ServerStart(int port)
         {
-            CheckIfDatabaseExists();
+            // check if database is reachable
+            if (!DatabaseConnection.TestConnection())
+            {
+                Log.WriteLine("Mysql server is inaccessible! Connection string: "
+                              + DatabaseConnection.ConnectionString, typeof(AccountsServer));
+                throw new Exception("Mysql server is inaccessible");
+            }
+
+            // check if database exists 
+            DatabaseConnection.TestIfDatabaseExists();
 
             //Read and buffer config
             var configReader = new AppSettingsReader();
@@ -171,10 +180,6 @@ namespace FoolOnlineServer.AccountsServer
             _instance.webSocketServer.Stop();
             _instance.webSocketServer = null;
         }
-
-        private static void CheckIfDatabaseExists()
-        {
-            DatabaseConnection.TestDb();
-        }
+        
     }
 }
