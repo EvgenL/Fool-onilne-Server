@@ -40,19 +40,7 @@ namespace FoolOnlineServer.AccountsServer
         #region Singleton
 
         private static AccountsServer _instance;
-        public static AccountsServer Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    _instance = new AccountsServer();
-                }
-
-                return _instance;
-            }
-            private set { }
-        }
+        public static AccountsServer Instance => _instance ?? (_instance = new AccountsServer());
 
         #endregion
 

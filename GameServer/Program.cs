@@ -18,6 +18,9 @@ namespace FoolOnlineServer
 
             //Start game server
             GameServer.GameServer.ServerStart(5055);
+
+            // Starting HTTP server
+            HTTPServer.HTTPServer.StartServer(80);
         }
     }
 }
