@@ -1,4 +1,5 @@
 ﻿using Evgen.Byffer;
+using FoolOnlineServer.AccountsServer;
 using FoolOnlineServer.GameServer.RoomLogic;
 using FoolOnlineServer.src.AccountsServer;
 
@@ -123,6 +124,20 @@ namespace FoolOnlineServer.GameServer.Packets
             string cardDroppedCode = buffer.ReadString();
 
             RoomManager.CoverCardOnTable(connectionId, cardOnTableCode, cardDroppedCode);
+        }
+
+        protected  void Packet_WithdrawFunds(long connectionId, byte[] data)
+        {
+            ByteBuffer buffer = new ByteBuffer();
+            buffer.WriteBytes(data);
+
+            //Skip packet id
+            buffer.ReadLong();
+
+            //Read withdraw sum
+            float sum = buffer.ReadFloat();
+
+            AccountManager.WithdrawFunds(connectionId, sum);
         }
     }
 }

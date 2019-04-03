@@ -54,8 +54,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\lib\ByteBuffer.dll</HintPath>
     </Reference>
-    <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
+    <Reference Include="log4net, Version=1.2.15.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a">
+      <HintPath>..\packages\log4net.2.0.5\lib\net45-full\log4net.dll</HintPath>
     </Reference>
     <Reference Include="MySql.Data, Version=8.0.13.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -95,12 +95,14 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="src\AccountsServer\AccountManager.cs" />
     <Compile Include="src\AccountsServer\AccountsServer.cs" />
     <Compile Include="src\AccountsServer\AccountsService.cs" />
     <Compile Include="src\AccountsServer\AccountsUtil.cs" />
     <Compile Include="src\AccountsServer\AuthService.cs" />
     <Compile Include="src\AccountsServer\Packets\AccountsServerSend.cs" />
     <Compile Include="src\Db\FoolUser.cs" />
+    <Compile Include="src\Db\ServerSettings.cs" />
     <Compile Include="src\Extensions\XElementExtensions.cs" />
     <Compile Include="src\GameServer\ClientManager.cs" />
     <Compile Include="src\GameServer\Packets\PacketHandlerDataLayer.cs" />
@@ -119,6 +121,19 @@
     <Compile Include="src\GameServer\Packets\PacketHandlerTransportLayer.cs" />
     <Compile Include="src\GameServer\StaticParameters.cs" />
     <Compile Include="src\GameServer\Token.cs" />
+    <Compile Include="src\HTTPServer\HTTPServer.cs" />
+    <Compile Include="src\HTTPServer\Pages\Home.cs" />
+    <Compile Include="src\HTTPServer\Pages\Payment\PaymentFail.cs" />
+    <Compile Include="src\HTTPServer\Pages\Payment\PaymentResult.cs" />
+    <Compile Include="src\HTTPServer\Pages\Payment\PaymentSuccess.cs" />
+    <Compile Include="src\HTTPServer\Pages\Payment\SendPayment.cs" />
+    <Compile Include="src\HTTPServer\Payments.cs" />
+    <Compile Include="src\HTTPServer\PaymentServices\Encoding.cs" />
+    <Compile Include="src\HTTPServer\PaymentServices\Interkassa.cs" />
+    <Compile Include="src\HTTPServer\Routes.cs" />
+    <Compile Include="src\TimeServer\Listeners\Payment.cs" />
+    <Compile Include="src\TimeServer\TimeServer.cs" />
+    <Compile Include="src\Utils\Email.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
@@ -147,10 +162,13 @@
       <Project>{c4fa5ceb-7137-4cb8-af82-d112e15b678a}</Project>
       <Name>Logging</Name>
     </ProjectReference>
+    <ProjectReference Include="..\SimpleHttpServer\SimpleHttpServer.csproj">
+      <Project>{9e139539-c272-488a-bfcf-caddf458df9d}</Project>
+      <Name>SimpleHttpServer</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

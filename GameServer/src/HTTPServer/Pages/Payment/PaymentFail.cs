@@ -6,7 +6,7 @@ namespace FoolOnlineServer.HTTPServer.Pages.Payment {
 		public static HttpResponse Get (HttpRequest request) {
 			// Выход если необходимые параметры не были получены
 			if (request.GetParams.ContainsKey("ik_pm_no")) {
-				Payments.Payment payment = Payments.GetPaymentById(Convert.ToInt64(request.GetParams["ik_pm_no"]));
+				Payments.Payment payment = Payments.GetPaymentById(Convert.ToInt64(request.GetParams["ik_pm_no"]), Payments.Type.Income);
 
 				if (payment.PaymentId != 0) {
 					Payments.UpdateStatus(payment.PaymentId, Payments.Status.Cancelled);

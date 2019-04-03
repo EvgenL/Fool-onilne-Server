@@ -15,14 +15,14 @@ namespace FoolOnlineServer.GameServer.Packets
         /// Pacet id's. Gets converted to long and send at beginning of each packet
         /// Ctrl+C, Ctrl+V between ServerSendPackets on server and ClientHandlePackets on client
         /// </summary>
-        public enum SevrerPacketId
+        public enum ServerPacketId
         {
-            //Connection
+            // Connection
             AuthorizedOk = 1,
             ErrorBadAuthToken,
             UpdateUserData,
 
-            //ROOMS
+            // ROOMS
             RoomList,
             JoinRoomOk,
             FaliToJoinFullRoom,
@@ -33,7 +33,7 @@ namespace FoolOnlineServer.GameServer.Packets
             OtherPlayerGotReady,
             OtherPlayerGotNotReady,
 
-            //GAMEPLAY
+            // GAMEPLAY
             StartGame,
             NextTurn,
             YouGotCardsFromTalon,
@@ -51,8 +51,10 @@ namespace FoolOnlineServer.GameServer.Packets
             Beaten,
             DefenderPicksCards,
             EndGameFool,
-            PlayerWon
+            PlayerWon,
 
+            // ACCOUNT
+            UpdateMoney
         }
        
 
@@ -79,7 +81,7 @@ namespace FoolOnlineServer.GameServer.Packets
             //writing the data
             buffer.WriteBytes(data);
 
-            Log.WriteLine($"Sent: {(SevrerPacketId)data[0]} to client " + client, typeof(ServerSendPackets));
+            Log.WriteLine($"Sent: {(ServerPacketId)data[0]} to client " + client, typeof(ServerSendPackets));
 
 
             client.Session.Send(buffer.ToArray(), 0, buffer.Length());
@@ -116,7 +118,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.AuthorizedOk);
+            buffer.WriteLong((long)ServerPacketId.AuthorizedOk);
 
             //Add client's connection id
             buffer.WriteLong(connectionId);
@@ -138,7 +140,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.ErrorBadAuthToken);
+            buffer.WriteLong((long)ServerPacketId.ErrorBadAuthToken);
 
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());
@@ -154,7 +156,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.UpdateUserData);
+            buffer.WriteLong((long)ServerPacketId.UpdateUserData);
 
             Client client = ClientManager.GetConnectedClient(connectionId);
 
@@ -178,7 +180,7 @@ namespace FoolOnlineServer.GameServer.Packets
         /// <summary>
         /// Sends only packetId 
         /// </summary>
-        private static void SendOnlyPacketId(long connectionId, SevrerPacketId packetId)
+        private static void SendOnlyPacketId(long connectionId, ServerPacketId packetId)
         {
             //New packet
             ByteBuffer buffer = new ByteBuffer();
@@ -199,7 +201,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.RoomList);
+            buffer.WriteLong((long)ServerPacketId.RoomList);
             //Add room list length
             buffer.WriteInteger(rooms.Length);
 
@@ -234,7 +236,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.JoinRoomOk);
+            buffer.WriteLong((long)ServerPacketId.JoinRoomOk);
             //Add roomId
             buffer.WriteLong(roomId);
 
@@ -247,7 +249,7 @@ namespace FoolOnlineServer.GameServer.Packets
         /// </summary>
         public static void Send_FaliToJoinFullRoom(long connectionId)
         {
-            SendOnlyPacketId(connectionId, SevrerPacketId.FaliToJoinFullRoom);
+            SendOnlyPacketId(connectionId, ServerPacketId.FaliToJoinFullRoom);
         }
 
         /// <summary>
@@ -255,7 +257,7 @@ namespace FoolOnlineServer.GameServer.Packets
         /// </summary>
         public static void Send_YouAreAlreadyInRoom(long connectionId)
         {
-            SendOnlyPacketId(connectionId, SevrerPacketId.YouAreAlreadyInRoom);
+            SendOnlyPacketId(connectionId, ServerPacketId.YouAreAlreadyInRoom);
         }
 
         /// <summary>
@@ -271,7 +273,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.RoomData);
+            buffer.WriteLong((long)ServerPacketId.RoomData);
 
             //Add players count
             long[] playerIdsInRoom = room.GetPlayerIds();
@@ -307,7 +309,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.OtherPlayerJoinedRoom);
+            buffer.WriteLong((long)ServerPacketId.OtherPlayerJoinedRoom);
 
             //Add player id
             buffer.WriteLong(playerIdWhoJoined);
@@ -332,7 +334,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.OtherPlayerLeftRoom);
+            buffer.WriteLong((long)ServerPacketId.OtherPlayerLeftRoom);
 
             //Add player id
             buffer.WriteLong(playerIdWhoLeft);
@@ -353,7 +355,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.OtherPlayerGotReady);
+            buffer.WriteLong((long)ServerPacketId.OtherPlayerGotReady);
 
             //Add player id
             buffer.WriteLong(otherPlayerId);
@@ -373,7 +375,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.OtherPlayerGotNotReady);
+            buffer.WriteLong((long)ServerPacketId.OtherPlayerGotNotReady);
 
             //Add player id
             buffer.WriteLong(otherPlayerId);
@@ -389,7 +391,7 @@ namespace FoolOnlineServer.GameServer.Packets
         /// </summary>
         public static void Send_StartGame(long connectionId)
         {
-            SendOnlyPacketId(connectionId, SevrerPacketId.StartGame);
+            SendOnlyPacketId(connectionId, ServerPacketId.StartGame);
         }
 
         /// <summary>
@@ -402,7 +404,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.NextTurn);
+            buffer.WriteLong((long)ServerPacketId.NextTurn);
 
             //Add first player id
             buffer.WriteLong(firstPlayerId);
@@ -428,7 +430,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.YouGotCardsFromTalon);
+            buffer.WriteLong((long)ServerPacketId.YouGotCardsFromTalon);
 
             //Add cards number
             buffer.WriteInteger(cards.Length);
@@ -452,7 +454,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.EnemyGotCardsFromTalon);
+            buffer.WriteLong((long)ServerPacketId.EnemyGotCardsFromTalon);
 
             //Add player id
             buffer.WriteLong(otherPlayerId);
@@ -475,7 +477,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.TalonData);
+            buffer.WriteLong((long)ServerPacketId.TalonData);
 
             //Add talon length
             buffer.WriteInteger(talonSize);
@@ -493,7 +495,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.DropCardOnTableOk);
+            buffer.WriteLong((long)ServerPacketId.DropCardOnTableOk);
 
             //Add card
             buffer.WriteString(cardCode);
@@ -507,7 +509,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.DropCardOnTableErrorNotYourTurn);
+            buffer.WriteLong((long)ServerPacketId.DropCardOnTableErrorNotYourTurn);
 
             //Add card
             buffer.WriteString(cardCode);
@@ -521,7 +523,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.DropCardOnTableErrorTableIsFull);
+            buffer.WriteLong((long)ServerPacketId.DropCardOnTableErrorTableIsFull);
 
             //Add card
             buffer.WriteString(cardCode);
@@ -535,7 +537,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.DropCardOnTableErrorCantDropThisCard);
+            buffer.WriteLong((long)ServerPacketId.DropCardOnTableErrorCantDropThisCard);
 
             //Add card
             buffer.WriteString(cardCode);
@@ -550,7 +552,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.OtherPlayerDropsCardOnTable);
+            buffer.WriteLong((long)ServerPacketId.OtherPlayerDropsCardOnTable);
 
             //Add playerWhoDrop
             buffer.WriteLong(playerWhoDrop);
@@ -569,7 +571,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.EndGame);
+            buffer.WriteLong((long)ServerPacketId.EndGame);
 
             //Add fool
             buffer.WriteLong(foolConnectionId);
@@ -595,7 +597,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.EndGameGiveUp);
+            buffer.WriteLong((long)ServerPacketId.EndGameGiveUp);
 
             //Add fool
             buffer.WriteLong(foolConnectionId);
@@ -621,7 +623,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.EndGameFool);
+            buffer.WriteLong((long)ServerPacketId.EndGameFool);
 
             //Add foolPlayerId
             buffer.WriteLong(foolPlayerId);
@@ -647,7 +649,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.OtherPlayerPassed);
+            buffer.WriteLong((long)ServerPacketId.OtherPlayerPassed);
 
             //Add passedPlayerId
             buffer.WriteLong(passedPlayerId);
@@ -666,7 +668,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.OtherPlayerCoversCard);
+            buffer.WriteLong((long)ServerPacketId.OtherPlayerCoversCard);
 
             //Add coveredPlayerId
             buffer.WriteLong(coveredPlayerId);
@@ -684,7 +686,7 @@ namespace FoolOnlineServer.GameServer.Packets
 
         public static void Send_Beaten(long connectionId)
         {
-            SendOnlyPacketId(connectionId, SevrerPacketId.Beaten);
+            SendOnlyPacketId(connectionId, ServerPacketId.Beaten);
         }
 
         public static void Send_DefenderPicksCards(long connectionId, long defenderPlayerId, int defSlotN, int cardsOnTableN)
@@ -693,7 +695,7 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.DefenderPicksCards);
+            buffer.WriteLong((long)ServerPacketId.DefenderPicksCards);
 
             //Add defenderPlayerId
             buffer.WriteLong(defenderPlayerId);
@@ -712,13 +714,25 @@ namespace FoolOnlineServer.GameServer.Packets
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)SevrerPacketId.PlayerWon);
+            buffer.WriteLong((long)ServerPacketId.PlayerWon);
 
             //Add winnerId
             buffer.WriteLong(winnerId);
 
             //Add winner's reward
             buffer.WriteDouble(winnerReward);
+
+            //Send packet
+            SendDataTo(connectionId, buffer.ToArray());
+        }
+
+        // TODO: Use this for withdraw funds
+        public static void UpdateMoney(long connectionId, double money, double frozenMoney)
+        {
+            //New packet
+            ByteBuffer buffer = new ByteBuffer();
+            buffer.WriteDouble(money);
+            buffer.WriteDouble(frozenMoney);
 
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());

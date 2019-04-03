@@ -25,7 +25,7 @@ namespace FoolOnlineServer.HTTPServer.Pages.Payment {
 			if (!request.GetParams.ContainsKey("ik_sign")) return;
 
 			// Получение записи об оплате
-			Payments.Payment payment = Payments.GetPaymentById(Convert.ToInt64(request.GetParams["ik_pm_no"]));
+			Payments.Payment payment = Payments.GetPaymentById(Convert.ToInt64(request.GetParams["ik_pm_no"]), Payments.Type.Income);
 			if (payment.PaymentId == 0) return; // Выход если запись не найдена
 
 			// Настоящая подпись имеет длину 24 знака

@@ -1,5 +1,6 @@
 using System;
 using FoolOnlineServer.Db;
+using FoolOnlineServer.GameServer;
 using MySql.Data.MySqlClient;
 
 namespace FoolOnlineServer.HTTPServer {
@@ -10,11 +11,16 @@ namespace FoolOnlineServer.HTTPServer {
 			Payed     = 2,
 		}
 
+		public enum Type {
+			Income     = 0,
+			Withdrawal = 1,
+		}
+
 
 		/// <summary>
 		/// Создание записи об оплате в БД
 		/// </summary>
-		public static Payment CreatePayment(long userId, float sum) {
+		public static Payment CreatePayment(long userId, float sum, Type type) {
 			MySqlCommand command = new MySqlCommand {
 				CommandText = "INSERT INTO `payment` "                        +
 							"(`user_id`, `sum`, `created`, `status`) VALUES " +
@@ -25,6 +31,8 @@ namespace FoolOnlineServer.HTTPServer {
 			command.Parameters.AddWithValue("@sum",     sum);
 			command.Parameters.AddWithValue("@time",    DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 			command.Parameters.AddWithValue("@status",  ((int) Status.NotPayed).ToString());
+			command.Parameters.AddWithValue("@type",    ((int) type).ToString());
+
 			DatabaseConnection.ExecuteNonQuery(command);
 
 			// Получение созданной строки
@@ -75,15 +83,17 @@ namespace FoolOnlineServer.HTTPServer {
 		/// <summary>
 		/// Returns Payment object from database
 		/// </summary>
-		public static Payment GetPaymentById (long paymentId) {
+		public static Payment GetPaymentById (long paymentId, Type type) {
 			// create new command
 			MySqlCommand command = new MySqlCommand {
 				CommandText = "SELECT * "              +
 							"FROM foolonline.payment " +
-							"WHERE payment_id=@payment_id;"
+							"WHERE payment_id=@payment_id AND type=@type;"
 			};
 
 			command.Parameters.AddWithValue("@payment_id", paymentId);
+			command.Parameters.AddWithValue("@type", ((int) type).ToString());
+
 
 			// execute
 			var reader = DatabaseConnection.ExecuteReader(command);
@@ -118,8 +128,6 @@ namespace FoolOnlineServer.HTTPServer {
 				money = reader.GetDouble("Money");
 			}
 			money += sum;
-
-			Console.WriteLine(money);
 
 			reader.Close();
 			DatabaseConnection.CloseReader();

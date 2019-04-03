@@ -19,10 +19,10 @@ namespace FoolOnlineServer.GameServer.Packets
         /// </summary>
         private enum ClientPacketId
         {
-            //LOGIN
+            // LOGIN
             Authorize = 1,
 
-            //ROOMS
+            // ROOMS
             CreateRoom,
             RefreshRoomList,
             JoinRoom,
@@ -32,10 +32,13 @@ namespace FoolOnlineServer.GameServer.Packets
             GetReady,
             GetNotReady,
 
-            //GAMEPLAY
+            // GAMEPLAY
             DropCardOnTable,
             Pass,
             CoverCardOnTable,
+
+            // ACCOUNT
+            WithdrawFunds
         }
 
         /// <summary>
@@ -60,7 +63,7 @@ namespace FoolOnlineServer.GameServer.Packets
 
             packets.Add((long)ClientPacketId.Authorize, Packet_Authorize);
 
-            //ROOMS
+            // ROOMS
             packets.Add((long)ClientPacketId.CreateRoom, Packet_CreateRoom);
             packets.Add((long)ClientPacketId.RefreshRoomList, Packet_RefreshRoomList);
             packets.Add((long)ClientPacketId.JoinRoom, Packet_JoinRoom);
@@ -70,10 +73,13 @@ namespace FoolOnlineServer.GameServer.Packets
             packets.Add((long)ClientPacketId.GetReady, Packet_GetReady);
             packets.Add((long)ClientPacketId.GetNotReady, Packet_GetNotReady);
 
-            //GAMEPLAY
+            // GAMEPLAY
             packets.Add((long)ClientPacketId.DropCardOnTable, Packet_DropCardOnTable);
             packets.Add((long)ClientPacketId.Pass, Packet_Pass);
             packets.Add((long)ClientPacketId.CoverCardOnTable, Packet_CoverCardOnTable);
+
+            // ACCOUNT
+            packets.Add((long)ClientPacketId.WithdrawFunds, Packet_WithdrawFunds);
         }
 
         /// <summary>

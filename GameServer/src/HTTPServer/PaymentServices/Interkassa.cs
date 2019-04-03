@@ -20,7 +20,7 @@ namespace FoolOnlineServer.HTTPServer.PaymentServices {
 		/// Генерация формы оплаты
 		/// </summary>
 		public static string GetForm(Dictionary<string, string> data) {
-			string text = /*"<body onload='document.getElementById(\"payment\").submit();'>" +*/
+			string text = "<body onload='document.getElementById(\"payment\").submit();'>" +
 				"<form id='payment' name='payment' method='post' action='https://sci.interkassa.com/' enctype='utf-8'>";
 
 			foreach (var param in data) {

@@ -16,7 +16,7 @@ namespace FoolOnlineServer.HTTPServer.Pages.Payment {
 
 			if (userId == 0 || Math.Abs(sum) < 1) return HttpBuilder.NotFound();
 
-			Payments.Payment payment = Payments.CreatePayment(userId, sum);
+			Payments.Payment payment = Payments.CreatePayment(userId, sum, Payments.Type.Income);
 			if (payment.PaymentId == 0) return HttpBuilder.NotFound();
 
 			// Получение параметров

@@ -175,9 +175,29 @@ namespace FoolOnlineServer.Db
             ExecuteNonQuery(command);
 
             // create table
-            command.CommandText = "CREATE TABLE IF NOT EXISTS `accounts` (\r   `UserId` bigint(20) unsigned NOT NULL AUTO_INCREMENT,\r   `Nickname` varchar(20) NOT NULL,\r   `Password` varchar(40) NOT NULL,\r   `Email` varchar(50) NOT NULL,\r   `Money` double unsigned DEFAULT \'0\',\r   `MoneyFrozen` double unsigned DEFAULT \'0\',\r   PRIMARY KEY (`UserId`,`Email`,`Nickname`),\r   UNIQUE KEY `ID_UNIQUE` (`UserId`),\r   UNIQUE KEY `Email_UNIQUE` (`Email`)\r ) ENGINE=InnoDB AUTO_INCREMENT=232 DEFAULT CHARSET=utf8mb4 COMMENT=\'Table for storing user account information\'";
+            command.CommandText =
+                "CREATE TABLE IF NOT EXISTS `accounts` (\r   `UserId` bigint(20) unsigned NOT NULL AUTO_INCREMENT,\r   `Nickname` varchar(20) NOT NULL,\r   `Password` varchar(40) NOT NULL,\r   `Email` varchar(50) NOT NULL,\r   `Money` double unsigned DEFAULT \'0\',\r   `MoneyFrozen` double unsigned DEFAULT \'0\',\r   PRIMARY KEY (`UserId`,`Email`,`Nickname`),\r   UNIQUE KEY `ID_UNIQUE` (`UserId`),\r   UNIQUE KEY `Email_UNIQUE` (`Email`)\r ) ENGINE=InnoDB AUTO_INCREMENT=232 DEFAULT CHARSET=utf8mb4 COMMENT=\'Table for storing user account information\'";
             ExecuteNonQuery(command);
-            command.CommandText = "CREATE TABLE IF NOT EXISTS `payment` (`payment_id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,`user_id` BIGINT(20) NOT NULL,`sum` FLOAT NULL DEFAULT 0,`created` BIGINT(20) NULL,`status` ENUM('0', '1', '2') NULL DEFAULT '0', `external_id` BIGINT(20) NULL COMMENT 'External payment id from payment system', PRIMARY KEY (`payment_id`),UNIQUE INDEX `payment_id_UNIQUE` (`payment_id` ASC) VISIBLE)COMMENT = 'Payment requests';";
+
+
+
+            command.CommandText = "CREATE TABLE IF NOT EXISTS `payment` ("                                           +
+                                  "`payment_id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,"                        +
+                                  "`user_id` BIGINT(20) NOT NULL,`sum` FLOAT NULL DEFAULT 0,"                        +
+                                  "`created` BIGINT(20) NULL,"                                                       +
+                                  "`status` ENUM('0', '1', '2') NULL DEFAULT '0',"                                   +
+                                  "`external_id` BIGINT(20) NULL COMMENT 'External payment id from payment system'," +
+                                  "`type` ENUM('0', '1') NOT NULL DEFAULT '0' COMMENT '0 - income, 1 - withdrawal'," +
+                                  "PRIMARY KEY (`payment_id`),UNIQUE INDEX `payment_id_UNIQUE` (`payment_id` ASC) VISIBLE)COMMENT = 'Payment requests';";
+            ExecuteNonQuery(command);
+
+
+
+            command.CommandText = "CREATE TABLE IF NOT EXISTS `server_settings` (" +
+                                  "`name` CHAR(128) NOT NULL,"                     +
+                                  "`value` VARCHAR(255) NULL,"                     +
+                                  "PRIMARY KEY (`name`),"                          +
+                                  "UNIQUE INDEX `name_UNIQUE` (`name` ASC) VISIBLE);";
             ExecuteNonQuery(command);
         }
     }
