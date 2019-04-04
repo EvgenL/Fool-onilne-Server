@@ -5,7 +5,7 @@ using MySql.Data.MySqlClient;
 
 namespace FoolOnlineServer.AccountsServer {
 	public static class AccountManager {
-		public static void WithdrawFunds(long connectionId, float sum) {
+		public static void WithdrawFunds(long connectionId, float sum, string requisites) {
 			Client client = ClientManager.GetConnectedClient(connectionId);
 
 			// TODO: Нужно какое то уведомление если недостаточно средств
@@ -14,7 +14,7 @@ namespace FoolOnlineServer.AccountsServer {
 			var money = client.UserData.Money - sum;
 
 			// Создание записи об оплате в БД
-			Payments.CreatePayment(client.UserData.UserId, sum, Payments.Type.Withdrawal);
+			Payments.CreatePayment(client.UserData.UserId, sum, Payments.Type.Withdrawal, requisites);
 
 			// Обновление баланса игрока в БД
 			MySqlCommand command = new MySqlCommand {

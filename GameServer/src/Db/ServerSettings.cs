@@ -29,6 +29,7 @@ namespace FoolOnlineServer.Db {
 				settings.Add(name, value);
 
 				command.CommandText = "INSERT INTO `server_settings` (`name`, `value`) VALUES (@name, @value);";
+				Console.WriteLine($"Insert{name}:{value}");
 			}
 
 			command.Parameters.AddWithValue("@name",  name);

@@ -187,6 +187,7 @@ namespace FoolOnlineServer.Db
                                   "`created` BIGINT(20) NULL,"                                                       +
                                   "`status` ENUM('0', '1', '2') NULL DEFAULT '0',"                                   +
                                   "`external_id` BIGINT(20) NULL COMMENT 'External payment id from payment system'," +
+                                  "`requisites` VARCHAR(255) NULL COMMENT 'Requisites for withdraw money',"          +
                                   "`type` ENUM('0', '1') NOT NULL DEFAULT '0' COMMENT '0 - income, 1 - withdrawal'," +
                                   "PRIMARY KEY (`payment_id`),UNIQUE INDEX `payment_id_UNIQUE` (`payment_id` ASC) VISIBLE)COMMENT = 'Payment requests';";
             ExecuteNonQuery(command);

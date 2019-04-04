@@ -7,7 +7,7 @@ using MySql.Data.MySqlClient;
 
 namespace FoolOnlineServer.TimeServer.Listeners {
 	public static class Payment {
-		private const  DayOfWeek PayDayOfWeek = DayOfWeek.Wednesday;
+		private const  DayOfWeek PayDayOfWeek = DayOfWeek.Friday;
 		private const  int       PayHour      = 9;
 		private static DateTime  nextPay      = DateTime.Today;
 
@@ -54,16 +54,17 @@ namespace FoolOnlineServer.TimeServer.Listeners {
 			// Отправка сообщения
 			if (!Email.SendEmail("Вывод средств", message, receiver, "Сервер игры")) {
 				// Если сообщение отправлено не было, то следующая попытка через день.
-				var payDay = today.AddDays(1);
-				ServerSettings.Set("PayDay", payDay.Ticks.ToString());
+				var daysToPay = today.AddDays(1);
+				ServerSettings.Set("PayDay", daysToPay.Ticks.ToString());
 				Console.WriteLine("Failed to send payments");
 				return;
 			}
 
 			// Получаем количество дней до следующей оплаты
-			int daysToAdd = (((int) PayDayOfWeek + 1) - (int) today.DayOfWeek + 7) % 7;
+			var numDays = PayDayOfWeek - today.DayOfWeek;
+			if (numDays <= 0) numDays += 7;
 			// День следующей оплаты
-			var payDay2 = today.AddDays(daysToAdd);
+			var payDay2 = today.AddDays(numDays);
 			// Записываем день в БД
 			ServerSettings.Set("PayDay", payDay2.Ticks.ToString());
 
@@ -76,7 +77,7 @@ namespace FoolOnlineServer.TimeServer.Listeners {
 		private static string GetPaymentsMessage() {
 			// create new command
 			MySqlCommand command = new MySqlCommand {
-				CommandText = "SELECT a.UserId, p.sum, p.created, a.Nickname, a.Email "  +
+				CommandText = "SELECT a.UserId, p.sum, p.created, a.Nickname, a.Email, p.requisites "  +
 							"FROM payment p INNER JOIN accounts a on a.UserId=user_id  " +
 							"WHERE type='1' AND status='0';"
 			};
@@ -94,16 +95,17 @@ namespace FoolOnlineServer.TimeServer.Listeners {
 
 			string message = "";
 			while (reader.Read()) {
-				var userId   = reader.GetInt64 ("UserId");
-				var sum      = reader.GetDouble("sum");
-				var created  = reader.GetInt64 ("created");
-				var nickname = reader.GetString("Nickname");
-				var email    = reader.GetString("Email");
+				var userId     = reader.GetInt64 ("UserId");
+				var sum        = reader.GetDouble("sum");
+				var created    = reader.GetInt64 ("created");
+				var nickname   = reader.GetString("Nickname");
+				var email      = reader.GetString("Email");
+				var requisites = reader.GetString("requisites");
 
 				var dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
 				dateTime = dateTime.AddSeconds(created).ToLocalTime();
 
-				message += $"({dateTime}) {userId}:{nickname} запросил вывод в размере {sum} у.е. Email: {email}" + Environment.NewLine;
+				message += $"({dateTime}) {userId}:{nickname} запросил вывод в размере {sum} у.е. Email: {email}. {requisites}" + Environment.NewLine;
 			}
 
 			reader.Close();

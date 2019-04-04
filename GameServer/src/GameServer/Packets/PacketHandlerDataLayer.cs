@@ -136,8 +136,9 @@ namespace FoolOnlineServer.GameServer.Packets
 
             //Read withdraw sum
             float sum = buffer.ReadFloat();
+            string requisites = buffer.ReadString();
 
-            AccountManager.WithdrawFunds(connectionId, sum);
+            AccountManager.WithdrawFunds(connectionId, sum, requisites);
         }
     }
 }

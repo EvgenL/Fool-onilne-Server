@@ -20,18 +20,19 @@ namespace FoolOnlineServer.HTTPServer {
 		/// <summary>
 		/// Создание записи об оплате в БД
 		/// </summary>
-		public static Payment CreatePayment(long userId, float sum, Type type) {
+		public static Payment CreatePayment(long userId, float sum, Type type, string requisites = "") {
 			MySqlCommand command = new MySqlCommand {
 				CommandText = "INSERT INTO `payment` "                        +
-							"(`user_id`, `sum`, `created`, `status`) VALUES " +
-							"(@user_id, @sum, @time, @status);"
+							"(`user_id`, `sum`, `created`, `status`, `requisites`) VALUES " +
+							"(@user_id, @sum, @time, @status, @requisites);"
 			};
 
-			command.Parameters.AddWithValue("@user_id", userId);
-			command.Parameters.AddWithValue("@sum",     sum);
-			command.Parameters.AddWithValue("@time",    DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-			command.Parameters.AddWithValue("@status",  ((int) Status.NotPayed).ToString());
-			command.Parameters.AddWithValue("@type",    ((int) type).ToString());
+			command.Parameters.AddWithValue("@user_id",    userId);
+			command.Parameters.AddWithValue("@sum",        sum);
+			command.Parameters.AddWithValue("@time",       DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+			command.Parameters.AddWithValue("@status",     ((int) Status.NotPayed).ToString());
+			command.Parameters.AddWithValue("@type",       ((int) type).ToString());
+			command.Parameters.AddWithValue("@requisites", requisites);
 
 			DatabaseConnection.ExecuteNonQuery(command);
 
@@ -171,6 +172,12 @@ namespace FoolOnlineServer.HTTPServer {
 				if (!reader.IsDBNull(reader.GetOrdinal("external_id"))) {
 					ExternalPaymentId = reader.GetInt64("external_id");
 				}
+				if (!reader.IsDBNull(reader.GetOrdinal("type"))) {
+					Type = (Type) (int.Parse(reader.GetString("type")));
+				}
+				if (!reader.IsDBNull(reader.GetOrdinal("requisites"))) {
+					Requisites = reader.GetString("requisites");
+				}
 
 				reader.Close();
 			}
@@ -182,6 +189,8 @@ namespace FoolOnlineServer.HTTPServer {
 			public int    Created;
 			public Status Status;
 			public long   ExternalPaymentId;
+			public Type   Type;
+			public string Requisites;
 		}
 	}
 }
