@@ -52,7 +52,7 @@ namespace FoolOnlineServer.Db
                 }
                 catch (Exception e)
                 {
-                    Log.WriteLine("Can't open connection.", typeof(DatabaseConnection));
+                    Log.WriteLine("Can't open connection. " + e, typeof(DatabaseConnection));
                     return false;
                 }
             }

@@ -35,53 +35,6 @@ namespace FoolOnlineServer
             Email.LoadSettings();
 
             //Payment.SendPayment();
-            
-            string SmtpHost = "smtp.yandex.ru";
-            int SmtpPort = 25; // 25
-
-            string Sender = "noreply-foolonline@yandex.ru";
-            string SmtpPassword = "12345678Test";
-
-            string senderName = "Хуй с горы";
-            string subject = "Тема темскaя";
-            string message = "Привет";
-            string receiver = "FoolPayout@yandex.ru";
-            bool EnableSsl = false;
-
-
-            SmtpClient smtp = new SmtpClient(SmtpHost, SmtpPort)
-            {
-                Credentials = new NetworkCredential(Sender, SmtpPassword),
-                EnableSsl = EnableSsl
-            };
-
-            try
-            {
-                MailMessage mail = new MailMessage
-                {
-                    From = new MailAddress(Sender, senderName),
-                    SubjectEncoding = Encoding.UTF8,
-                    BodyEncoding = Encoding.UTF8,
-                    Subject = subject,
-                    Body = message,
-                    To = { new MailAddress(receiver) }
-                };
-
-                smtp.Send(mail);
-            }
-            catch (SmtpException e)
-            {
-                Log.WriteLine("Error! Mail not sent! " + e.Message, typeof(Email));
-                return;
-            }
-            catch (Exception e)
-            {
-                Log.WriteLine(e.Message, typeof(Email));
-                return;
-            }
-            Log.WriteLine("OK", typeof(Email));
-            
-             
         }
     }
 }
