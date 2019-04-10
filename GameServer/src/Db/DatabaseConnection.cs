@@ -21,7 +21,7 @@ namespace FoolOnlineServer.Db
 
         #region Open/close connection
 
-        public const string ConnectionString = "server=localhost;uid=root;pwd=";
+        public const string ConnectionString = "server=localhost;uid=root;pwd=";//"server=localhost;uid=root;pwd=";
 
         private static MySqlConnection presistentConnection;
         private static MySqlDataReader presistentReader;
@@ -189,7 +189,8 @@ namespace FoolOnlineServer.Db
                                   "`external_id` BIGINT(20) NULL COMMENT 'External payment id from payment system'," +
                                   "`requisites` VARCHAR(255) NULL COMMENT 'Requisites for withdraw money',"          +
                                   "`type` ENUM('0', '1') NOT NULL DEFAULT '0' COMMENT '0 - income, 1 - withdrawal'," +
-                                  "PRIMARY KEY (`payment_id`),UNIQUE INDEX `payment_id_UNIQUE` (`payment_id` ASC) VISIBLE)COMMENT = 'Payment requests';";
+                                  "PRIMARY KEY (`payment_id`),UNIQUE INDEX `payment_id_UNIQUE` (`payment_id` ASC) ) COMMENT = 'Payment requests';";
+
             ExecuteNonQuery(command);
 
 
@@ -198,7 +199,7 @@ namespace FoolOnlineServer.Db
                                   "`name` CHAR(128) NOT NULL,"                     +
                                   "`value` VARCHAR(255) NULL,"                     +
                                   "PRIMARY KEY (`name`),"                          +
-                                  "UNIQUE INDEX `name_UNIQUE` (`name` ASC) VISIBLE);";
+                                  "UNIQUE INDEX `name_UNIQUE` (`name` ASC) );";
             ExecuteNonQuery(command);
         }
     }

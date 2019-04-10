@@ -45,8 +45,12 @@ namespace FoolOnlineServer.TimeServer.Listeners {
 			var receiver = ServerSettings.Get("payment_receiver_email");
 
 			if (string.IsNullOrEmpty(receiver)) {
-				Log.WriteLine("Receiver email not set", typeof(Payment));
-				return;
+				Log.WriteLine("WARNING! Receiver email not set.", typeof(Payment));
+				Log.WriteLine("Please set using 'paymentReciever example@mail.com'.", typeof(Payment));
+				Log.WriteLine("Type 'help' for more info.", typeof(Payment));
+			    var daysToPay = today.AddDays(1);
+			    ServerSettings.Set("PayDay", daysToPay.Ticks.ToString());
+                return;
 			}
 
 			var message = GetPaymentsMessage();

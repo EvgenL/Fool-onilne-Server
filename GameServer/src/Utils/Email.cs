@@ -19,7 +19,10 @@ namespace FoolOnlineServer.Utils {
 			Sender       = ServerSettings.Get("email_sender");
 			SmtpPassword = ServerSettings.Get("email_pwd");
 			SmtpHost     = ServerSettings.Get("email_smtp_host");
-			SmtpPort     = Convert.ToInt32(ServerSettings.Get("email_smtp_port"));
+
+            // if port was read and not empty
+		    string port = ServerSettings.Get("email_smtp_port");
+            SmtpPort = port == "" ? SmtpPort : Convert.ToInt32(port);
 		}
 
 
@@ -36,33 +39,42 @@ namespace FoolOnlineServer.Utils {
 				Log.WriteLine("Smtp host not set", typeof(Email));
 				return false;
 			}
-			if (string.IsNullOrEmpty(SmtpHost)) {
+			if (SmtpPort == 0) {
 				Log.WriteLine("Smtp port not set", typeof(Email));
 				return false;
 			}
 
-			SmtpClient smtp = new SmtpClient(SmtpHost, 25) {
+			SmtpClient smtp = new SmtpClient(SmtpHost, SmtpPort) {
 				Credentials = new NetworkCredential(Sender, SmtpPassword), EnableSsl = true
-			};
-			MailMessage mail = new MailMessage {
-				From            = new MailAddress(Sender, senderName),
-				SubjectEncoding = Encoding.UTF8,
-				BodyEncoding    = Encoding.UTF8,
-				Subject         = subject,
-				Body            = message,
-				To              = { new MailAddress(receiver) }
 			};
 
 			try {
-				smtp.Send(mail);
-				Log.WriteLine("Message sent successfully!", typeof(Email));
+
+			    MailMessage mail = new MailMessage
+			    {
+			        From = new MailAddress(Sender, senderName),
+			        SubjectEncoding = Encoding.UTF8,
+			        BodyEncoding = Encoding.UTF8,
+			        Subject = subject,
+			        Body = message,
+			        To = { new MailAddress(receiver) }
+			    };
+
+                smtp.Send(mail);
+				Log.WriteLine("Mail sent successfully!", typeof(Email));
 			}
-			catch (SmtpException e) {
-				Log.WriteLine("Error!Message not sent! " + e.Message, typeof(Email));
-				return false;
+			catch (SmtpException e)
+			{
+			    Log.WriteLine("Error! Mail not sent! " + e.Message, typeof(Email));
+			    return false;
+			}
+			catch (Exception e)
+			{
+			    Log.WriteLine(e.Message, typeof(Email));
+			    return false;
 			}
 
-			return true;
+            return true;
 		}
 	}
 }

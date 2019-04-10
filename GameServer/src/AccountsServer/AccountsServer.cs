@@ -6,7 +6,7 @@
 
 
 // DEFINES
-#define TEST_MODE_LOCALHOST // if defined, will route client to localhost game server
+//#define TEST_MODE_LOCALHOST // if defined, will route client to localhost game server
 
 
 
@@ -73,12 +73,17 @@ namespace FoolOnlineServer.AccountsServer
             ServerVersion = (string)configReader.GetValue("serverVersion", typeof(string));
             AnonymousAllowed = (bool)configReader.GetValue("anonymousAllowed", typeof(bool));
 
-#if TEST_MODE_LOCALHOST
-            GameServerIp = (string)configReader.GetValue("gameServerIp-local", typeof(string));
-#else
-            GameServerIp = (string)configReader.GetValue("gameServerIp", typeof(string));
-#endif
+            if ((bool) configReader.GetValue("testModeUseLocalhost", typeof(bool)))
+            {
+                GameServerIp = (string)configReader.GetValue("gameServerIp_local", typeof(string));
+            }
+            else
+            {
+                GameServerIp = (string)configReader.GetValue("gameServerIp", typeof(string));
+            }
             GameServerPort = (int)configReader.GetValue("gameServerPort", typeof(int));
+
+
 
             //Creating a new server instance
             Instance.webSocketServer = new WebSocketServer();
@@ -115,6 +120,7 @@ namespace FoolOnlineServer.AccountsServer
             XElement body = XElement.Parse(Encoding.Unicode.GetString(data));
 
             //todo Check version SendErrorAndClose(session, "Wrong version. Server version is " + serverVersion);
+            //todo add node VersionCheck
 
             // read connection data
             XElement connectionXml = body.GetChildElement("Connection");

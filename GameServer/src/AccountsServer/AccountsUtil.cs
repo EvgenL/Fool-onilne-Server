@@ -60,7 +60,9 @@ namespace FoolOnlineServer.AccountsServer
         /// </summary>
         public static bool CheckVersion(string clientVersion)
         {
-            //if client is 1.3.1.2 and server is 1.3 then allow
+            //if client is for example 1.3.1.2 and server is 1.3 then allow.
+            //if client is for example 1.4.2 and server is 1.3 then not allow.
+
             bool ok = clientVersion.StartsWith(FoolOnlineServer.AccountsServer.AccountsServer.ServerVersion);
 
             return ok;
