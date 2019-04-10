@@ -50,9 +50,9 @@ namespace FoolOnlineServer.Db
                     presistentConnection.Open();
                     return true;
                 }
-                catch (Exception e)
+                catch (MySqlException e)
                 {
-                    Log.WriteLine("Can't open connection. " + e, typeof(DatabaseConnection));
+                    Log.WriteLine("Can't open connection. " + e.ToString(), typeof(DatabaseConnection));
                     return false;
                 }
             }
