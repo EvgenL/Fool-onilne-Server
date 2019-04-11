@@ -8,9 +8,12 @@
         public const string HELP_COMMAND_STRING = "\nList of available commands:\n"
                                                   + "help - This page\n"
                                                   + "stats - Current server state\n"
-                                                  + "exit - Shutdown the application\n"
+                                                  + "exit, stop, \\q - Shutdown the application\n"
                                                   + "setSenderEmail - Settings for EmailSender. You need to pass the parameters: \"email\", \"password\", \"smtp\" \"host\", port\n"
                                                   + "paymentReceiver - Email for withdrawal requests\n"
-                                                  + "sendPayments - Sending orders for withdrawal in manual mode\n";
+                                                  + "sendPayments - Sending orders for withdrawal in manual mode\n"
+                                                  + ""
+                                                  + "Launch args:\n"
+                                                  + "connectionString= - sets Mysql connection string. Use example: connectionString=server=localhost;uid=root;pwd=";
     }
 }

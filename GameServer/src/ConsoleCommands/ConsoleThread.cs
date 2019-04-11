@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Mime;
 using System.Threading;
 using FoolOnlineServer.Db;
 using FoolOnlineServer.GameServer.RoomLogic;
@@ -40,8 +41,12 @@ namespace FoolOnlineServer.GameServer {
 				var command =  line?[0];
 
 				switch (command) {
-					case "exit":
-						consoleIsRunning = false;
+				    case "exit":
+				    case "stop":
+				    case "\\q":
+                        consoleIsRunning = false;
+                        // todo: close all servers
+                        Environment.Exit(0);
 						return;
 					case "help":
 						Console.WriteLine(Constants.HELP_COMMAND_STRING);

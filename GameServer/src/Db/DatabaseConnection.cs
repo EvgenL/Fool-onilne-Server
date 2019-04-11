@@ -21,7 +21,12 @@ namespace FoolOnlineServer.Db
 
         #region Open/close connection
 
-        public const string ConnectionString = "server=localhost;uid=root;pwd=";//"server=localhost;uid=root;pwd=";
+        /// <summary>
+        /// The connection sring.
+        /// Can be changed through launch arguments 
+        /// with use of an argument connectionString=...
+        /// </summary>
+        public static string ConnectionString = "server=localhost;uid=root;pwd=";
 
         private static MySqlConnection presistentConnection;
         private static MySqlDataReader presistentReader;
@@ -43,7 +48,18 @@ namespace FoolOnlineServer.Db
                 || presistentConnection.State == ConnectionState.Broken)
             {
                 presistentConnection = new MySqlConnection();
-                presistentConnection.ConnectionString = ConnectionString;
+
+                // trying to assign connection string
+                // it throws an exception if connection string has wrong format
+                try
+                {
+                    presistentConnection.ConnectionString = ConnectionString;
+                }
+                catch (Exception e)
+                {
+                    Log.WriteLine("Bad connection string!\n" + e.Message, typeof(DatabaseConnection));
+                    return false;
+                }
 
                 try
                 {
@@ -52,7 +68,7 @@ namespace FoolOnlineServer.Db
                 }
                 catch (MySqlException e)
                 {
-                    Log.WriteLine("Can't open connection. " + e.ToString(), typeof(DatabaseConnection));
+                    Log.WriteLine("Can't open connection:\n" + e.Message, typeof(DatabaseConnection));
                     return false;
                 }
             }
@@ -144,18 +160,26 @@ namespace FoolOnlineServer.Db
         /// <summary>
         /// Tests if connection ok
         /// </summary>
-        public static bool TestConnection()
+        /// <param name="onConnected">Action will be called if connected succesfully</param>
+        public static void TestConnection(Action onConnected = null)
         {
-            // Connect to mysql if wasn't
-            if (!ConnectionOpen())
+            if (ConnectionOpen())
             {
-                return false;
+                Log.WriteLine("Database connected succesfully", typeof(DatabaseConnection));
+
+                // Fire the action!
+                onConnected?.Invoke();
             }
             else
             {
-                return true;
-            }
+                Log.WriteLine("\n\nLooks like there was an error after trying to connect to database.", typeof(DatabaseConnection));
+                Log.WriteLine("You can change the connection string with launch arg: ", typeof(DatabaseConnection));
+                Log.WriteLine("connectionString=...", typeof(DatabaseConnection));
+                Log.WriteLine("Example: connectionString=server=localhost;uid=root;pwd=", typeof(DatabaseConnection));
 
+
+                // don't fire the action. Just close out
+            }
         }
 
         /// <summary>

@@ -101,6 +101,7 @@
     <Compile Include="src\AccountsServer\AccountsUtil.cs" />
     <Compile Include="src\AccountsServer\AuthService.cs" />
     <Compile Include="src\AccountsServer\Packets\AccountsServerSend.cs" />
+    <Compile Include="src\ConsoleCommands\ProcessArgs.cs" />
     <Compile Include="src\Db\FoolUser.cs" />
     <Compile Include="src\Db\ServerSettings.cs" />
     <Compile Include="src\Extensions\XElementExtensions.cs" />
@@ -108,7 +109,7 @@
     <Compile Include="src\GameServer\Packets\PacketHandlerDataLayer.cs" />
     <Compile Include="src\GameServer\TokenManager.cs" />
     <Compile Include="src\GameServer\Client.cs" />
-    <Compile Include="src\GameServer\ConsoleThread.cs" />
+    <Compile Include="src\ConsoleCommands\ConsoleThread.cs" />
     <Compile Include="src\GameServer\Constants.cs" />
     <Compile Include="src\Db\DatabaseConnection.cs" />
     <Compile Include="src\Db\DatabaseOperations.cs" />
