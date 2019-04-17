@@ -1,33 +1,32 @@
-﻿
-
-
-// DEFINES
-//#define TEST_MODE_TWOCARDS_TWOCARDS // if defined will give players only two cards at game start
-
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using FoolOnlineServer.GameServer.Packets;
 using Logginf;
 
 namespace FoolOnlineServer.GameServer.RoomLogic
 {
+
+    /// <summary>
+    /// The actual room class.
+    /// Contains all game rules
+    /// TODO split it into differenet classes because of it getting too big
+    /// </summary>
     public class RoomInstance : IDisposable
     {
-
         #region Constants and enum
 
         /// <summary>
-        /// pause before sending NextTurn 
+        /// Pause before sending NextTurn 
         /// Needed to animations on client side end
         /// </summary>
         private const int SLEEP_BEFORE_NEXT_TURN = 1000;
 
         /// <summary>
         /// Max amount of cards which player can draw from talon
-        /// If player has more cards than this number, he wont take any
+        /// If player has more cards than this number, he wont take any more
         /// </summary>
         private int MAX_DRAW_CARDS = 6;
 
@@ -47,6 +46,9 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
         #region public fields
 
+        /// <summary>
+        /// Current state of room (Playing, Waiting)
+        /// </summary>
         public RoomState State { get; private set; }
 
         /// <summary>
@@ -213,29 +215,12 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         //Private fields
         #endregion
 
-        #region Constructors
-
-        
+        #region Constructor
+       
         public RoomInstance(long roomId)
         {
             this.RoomId = roomId;
             this.MaxPlayers = 6;
-        }
-
-        public RoomInstance(long roomId, int maxPlayers)
-        {
-            this.RoomId = roomId;
-            this.MaxPlayers = maxPlayers;
-        }
-
-        public RoomInstance(long roomId, int maxPlayers, int deckSize)
-        {
-            this.RoomId = roomId;
-            this.MaxPlayers = maxPlayers;
-            this.DeckSize = deckSize;
-
-            PlayerIds = new List<long>(maxPlayers);
-            clientsInRoom = new Client[maxPlayers];
         }
 
         #endregion
@@ -350,11 +335,9 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
                 }
             }
-
-            PlayerNumberChanged();
-
             Log.WriteLine("Player left room " + client, this);
 
+            PlayerNumberChanged();
 
             if (ConnectedPlayersN == 0)
             {
@@ -444,7 +427,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
         #endregion
 
-        #region Client's message processing methods
+        #region Client's messages processing
 
         /// <summary>
         /// If client's connection was destroyed we need make other players to wait him.
@@ -937,7 +920,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
         #endregion
 
-        #region Gameplay methods
+        #region Gameplay rules methods
 
         /// <summary>
         /// Validation of can card on table be covered with come card
@@ -1016,13 +999,13 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                 Thread.Sleep(SLEEP_BEFORE_NEXT_TURN);
 
                 //Next turn
-                if (CheckGameEndConditions())
-                {
-                    ClearLists();
-                }
-                else
+                if (!CheckGameEndConditions())
                 {
                     NextTurn();
+                }
+                else // if game ended
+                {
+                    ClearLists();
                 }
 
             }).Start();
@@ -1092,6 +1075,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                     GetClient(playerId).IsReady = false;
                 }
             }
+
         }
 
         /// <summary>
@@ -1478,7 +1462,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
 #endregion
 
-#region IDisposable
+        #region IDisposable
 
         private void ReleaseUnmanagedResources()
         {
@@ -1502,11 +1486,15 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             ReleaseUnmanagedResources();
         }
 
-#endregion
+        #endregion
+
+        #region Overrides 
 
         public override string ToString()
         {
-            return $"Room {RoomId} players: {ConnectedPlayersN}/{MaxPlayers}";
+            return $"Room {RoomId} players: {ConnectedPlayersN}/{MaxPlayers}. State: {State}";
         }
+
+        #endregion
     }
 }
