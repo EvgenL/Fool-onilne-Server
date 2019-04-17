@@ -293,6 +293,8 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
         /// <summary>
         /// Called by player who wants to leave room
+        /// Or when player got kicked out of the room
+        /// for example lost internet connection
         /// </summary>
         /// <param name="leftPlayerId">Player's connection id</param>
         public void LeaveRoom(long leftPlayerId)
@@ -308,41 +310,11 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                 ServerSendPackets.Send_OtherPlayerLeftRoom(playerId, playerId, client.SlotInRoom);
             }
 
-            //SEND WIN MESSAGE
-            //if was playing
-            if (State == RoomState.Playing)
-            {
-                //if player not won: end game, count him as give up
-                if (!playersWon[client.SlotInRoom])
-                {
-                    //divide rewards
-                    double betLeft = bet - (bet / (playersWinningOrder.Count + 1));
-                    int playersNotWon = MaxPlayers - playersWinningOrder.Count + 1;
-                    foreach (var playierId in PlayerIds)
-                    {
-                        if (!playersRewards.ContainsKey(playierId))
-                        {
-                            playersRewards.Add(playierId, betLeft / playersNotWon);
-                        }
-                    }
-
-                    //Send everybody endgame message
-                    foreach (var playerId in PlayerIds)
-                    {
-                        ServerSendPackets.Send_EndGameGiveUp(playerId, leftPlayerId, playersRewards);
-                    }
-                    ClearLists();
-
-                }
-            }
+            
             Log.WriteLine("Player left room " + client, this);
 
             PlayerNumberChanged();
 
-            if (ConnectedPlayersN == 0)
-            {
-                RoomManager.DeleteRoom(this);
-            }
         }
 
         private void Kick(long connectionId, string reason)
@@ -440,16 +412,40 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             LeaveRoom(connectionId);
         }
 
+        /// <summary>
+        /// Mark client as given up if
+        /// 1) he decided to give up himself
+        /// 2) he left game right in the middle and didn't reconnected untill turn ended
+        /// </summary>
+        /// <param name="connectionId"></param>
         public void GiveUp(long connectionId)
         {
-            if (State == RoomState.Playing)
+            //SEND WIN MESSAGE
+            //if was playing
+            if (State != RoomState.Playing) return;
+
+            //if player not won: end game, count him as give up
+            var client = GetClient(connectionId);
+            if (!playersWon[client.SlotInRoom])
             {
-                //todo
-                LeaveRoom(connectionId);
-            }
-            else
-            {
-                LeaveRoom(connectionId);
+                //divide rewards
+                double betLeft = bet - (bet / (playersWinningOrder.Count + 1));
+                int playersNotWon = MaxPlayers - playersWinningOrder.Count + 1;
+                foreach (var playierId in PlayerIds)
+                {
+                    if (!playersRewards.ContainsKey(playierId))
+                    {
+                        playersRewards.Add(playierId, betLeft / playersNotWon);
+                    }
+                }
+
+                //Send everybody endgame message
+                foreach (var playerId in PlayerIds)
+                {
+                    ServerSendPackets.Send_EndGameGiveUp(playerId, connectionId, playersRewards);
+                }
+
+                GameEnded();
             }
         }
 
@@ -740,13 +736,34 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             //calculate reward for him
 
             double reward = bet / (playersWinningOrder.Count + 1d);
-
-            playersRewards.Add(connectionId, reward);
+            GiveRewardToPlayer(connectionId, reward);
 
             foreach (var otherPlayerId in PlayerIds)
             {
                 ServerSendPackets.Send_PlayerWon(otherPlayerId, connectionId, reward);
             }
+
+        }
+
+        /// <summary>
+        /// Ends game with somobody as fool (loser)
+        /// </summary>
+        private void EndGameFool(long foolConnectionId)
+        {
+            GiveRewardToPlayer(foolConnectionId, bet);
+
+            foreach (var player in PlayerIds)
+            {
+                ServerSendPackets.Send_EndGameFool(player, foolConnectionId, playersRewards);
+            }
+
+            GameEnded();
+        }
+
+        private void GiveRewardToPlayer(long connectionId, double reward)
+        {
+
+            playersRewards.Add(connectionId, reward);
         }
 
         private void TableToDiscard()
@@ -755,20 +772,13 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             cardsOnTable.Clear();
         }
 
-        /// <summary>
-        /// Ends game with somobody as fool (loser)
-        /// </summary>
-        private void EndGameFool(Client fool)
+        private void GameEnded()
         {
-            playersRewards.Add(fool.ConnectionId, -bet);
-
-            foreach (var player in PlayerIds)
-            {
-                ServerSendPackets.Send_EndGameFool(player, fool.ConnectionId, playersRewards);
-            }
-
             State = RoomState.PlayersGettingReady;
-            PlayerNumberChanged();
+
+            roundsPlayedInThisRoom++;
+
+            ClearLists();
         }
 
         /// <summary>
@@ -1076,6 +1086,10 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                 }
             }
 
+            if (ConnectedPlayersN == 0)
+            {
+                RoomManager.DeleteRoom(this);
+            }
         }
 
         /// <summary>
@@ -1096,7 +1110,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
             Log.WriteLine("Everybody are ready. Start game.", this);
 
-            SetLists();
+            ResetLists();
 
             MixTalon();
             Log.WriteLine("Talon mixed", this);
@@ -1119,7 +1133,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             //TODO start timer
         }
 
-        private void SetLists()
+        private void ResetLists()
         {
             cardsOnTable = new List<string[]>();
             playersPass = new bool[MaxPlayers];
@@ -1138,8 +1152,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             if (roundsPlayedInThisRoom > 0 && PlayerIds.Contains(lastFoolPlayerId))
             {
                 int loserSlotN = GetSlotN(lastFoolPlayerId);
-                int firstPlayerSlotN = loserSlotN--;
-                if (firstPlayerSlotN < 0) firstPlayerSlotN = MaxPlayers - 1;
+                int firstPlayerSlotN = (--loserSlotN) % MaxPlayers; // minus one and loop on MaxPlayers
 
                 return PlayerIds[firstPlayerSlotN];
             }
@@ -1421,7 +1434,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             // find next player who not still won
             do
             {
-                leftSlotN = (leftSlotN + 1) % MaxPlayers;
+                leftSlotN = (++leftSlotN) % MaxPlayers;
 
                 if (leftSlotN == rightSlotN) return rightPlayer;
 
@@ -1439,20 +1452,21 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             if (talon.Count == 0)
             {
                 //get numbers of players who not won
-                int notWon = 0;
+                int notWonPlayersN = 0;
                 for (int i = 0; i < MaxPlayers; i++)
                 {
                     if (!playersWon[i])
                     {
-                        notWon++;
+                        notWonPlayersN++;
                     }
                 }
 
                 //only one fool left then end game
-                if (notWon == 1)
+                if (notWonPlayersN == 1)
                 {
                     int foolSlotN = playersWon.ToList().IndexOf(false);
-                    EndGameFool(clientsInRoom[foolSlotN]);
+                    var foolClient = clientsInRoom[foolSlotN];
+                    EndGameFool(foolClient.ConnectionId);
                     return true;
                 }
             }
