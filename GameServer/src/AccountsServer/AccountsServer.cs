@@ -14,6 +14,7 @@ using System;
 using System.Configuration;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Xml.Linq;
 using FoolOnlineServer.Db;
@@ -55,7 +56,7 @@ namespace FoolOnlineServer.AccountsServer
         private WebSocketServer webSocketServer;
         private static HttpListener listener;
 
-        public static void ServerStart(int port)
+        public static async void ServerStart(int port)
         {
             // check if database exists 
             DatabaseConnection.TestIfDatabaseExists();
@@ -71,7 +72,13 @@ namespace FoolOnlineServer.AccountsServer
             }
             else
             {
-                GameServerIp = (string)configReader.GetValue("gameServerIp", typeof(string));
+                //GameServerIp = (string)configReader.GetValue("gameServerIp", typeof(string));
+
+                // get my ip 
+                var httpClient = new HttpClient();
+                GameServerIp = await httpClient.GetStringAsync("https://api.ipify.org");
+                // and send to player
+                Log.WriteLine($"My public IP address is: {GameServerIp}", typeof(AccountsServer));
             }
             GameServerPort = (int)configReader.GetValue("gameServerPort", typeof(int));
 

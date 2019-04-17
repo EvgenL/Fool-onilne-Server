@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.ComponentModel.Design;
 using System.Data;
 using FoolOnlineServer.GameServer;
@@ -26,7 +27,9 @@ namespace FoolOnlineServer.Db
         /// Can be changed through launch arguments 
         /// with use of an argument connectionString=...
         /// </summary>
-        public static string ConnectionString = "server=localhost;uid=root;pwd=";
+        public static string ConnectionString = "";
+
+        private static bool VerboseLogging;
 
         private static MySqlConnection presistentConnection;
         private static MySqlDataReader presistentReader;
@@ -43,6 +46,9 @@ namespace FoolOnlineServer.Db
         /// <returns>Opened conneсtion. Null if inaccessible.</returns>
         private static bool ConnectionOpen()
         {
+            var configReader = new AppSettingsReader();
+            VerboseLogging = (bool)configReader.GetValue("verboseLogging", typeof(bool));
+
             if (presistentConnection == null
                 || presistentConnection.State == ConnectionState.Closed
                 || presistentConnection.State == ConnectionState.Broken)
@@ -69,6 +75,12 @@ namespace FoolOnlineServer.Db
                 catch (MySqlException e)
                 {
                     Log.WriteLine("Can't open connection:\n" + e.Message, typeof(DatabaseConnection));
+
+                    if (VerboseLogging)
+                    {
+                        Log.WriteLine("Verbose:\n" + e, typeof(DatabaseConnection));
+                    }
+
                     return false;
                 }
             }
@@ -172,13 +184,17 @@ namespace FoolOnlineServer.Db
             }
             else
             {
-                Log.WriteLine("\n\nLooks like there was an error after trying to connect to database.", typeof(DatabaseConnection));
+                Log.WriteLine("Looks like there was an error after trying to connect to database.", typeof(DatabaseConnection));
                 Log.WriteLine("You can change the connection string with launch arg: ", typeof(DatabaseConnection));
                 Log.WriteLine("connectionString=...", typeof(DatabaseConnection));
                 Log.WriteLine("Example: connectionString=server=localhost;uid=root;pwd=", typeof(DatabaseConnection));
 
 
                 // don't fire the action. Just close out
+
+
+                Log.WriteLine("Press Enter to continue...", typeof(DatabaseConnection));
+                Console.ReadKey();
             }
         }
 

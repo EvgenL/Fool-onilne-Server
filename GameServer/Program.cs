@@ -43,10 +43,10 @@ namespace FoolOnlineServer
             GameServer.GameServer.ServerStart(5055);
 
             // Starting HTTP server
-            HTTPServer.HTTPServer.StartServer(5056);
+            //HTTPServer.HTTPServer.StartServer(5056);
 
             TimeServer.TimeServer.Init();
-            Email.LoadSettings();
+            //Email.LoadSettings();
 
             //Payment.SendPayment();
         }
