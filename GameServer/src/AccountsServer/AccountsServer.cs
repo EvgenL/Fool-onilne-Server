@@ -1,16 +1,4 @@
-﻿
-
-
-/// Server which manages validation of client accounts
-/// and sends them to gameserver
-
-
-// DEFINES
-//#define TEST_MODE_LOCALHOST // if defined, will route client to localhost game server
-
-
-
-using System;
+﻿using System;
 using System.Configuration;
 using System.Linq;
 using System.Net;
@@ -118,6 +106,9 @@ namespace FoolOnlineServer.AccountsServer
             // read bytes as xml
             XElement body = XElement.Parse(Encoding.Unicode.GetString(data));
 
+
+            Log.WriteLine("OnNewDataReceived " + body, typeof(AccountsServer));
+
             //todo Check version SendErrorAndClose(session, "Wrong version. Server version is " + serverVersion);
             //todo add node VersionCheck
 
@@ -162,6 +153,7 @@ namespace FoolOnlineServer.AccountsServer
 
         private static void OnSessionClosed(WebSocketSession session, CloseReason value)
         {
+            Log.WriteLine("OnSessionClosed " + session + ". Reason: " + value, typeof(AccountsServer));
         }
 
 

@@ -19,7 +19,7 @@ namespace SimpleHttpServer {
 
 		private List<Route> Routes = new List<Route>();
 
-		private static readonly ILog log = LogManager.GetLogger(typeof(HttpProcessor));
+		//private static readonly ILog log = LogManager.GetLogger(typeof(HttpProcessor));
 
 		#endregion
 
@@ -161,7 +161,7 @@ namespace SimpleHttpServer {
 				return route.Callable(request);
 			}
 			catch (Exception ex) {
-				log.Error(ex);
+				//log.Error(ex);
 				return HttpBuilder.InternalServerError();
 			}
 		}

@@ -25,7 +25,7 @@ namespace SimpleHttpServer
 
         #endregion
 
-        private static readonly ILog log = LogManager.GetLogger(typeof(HttpServer));
+        //private static readonly ILog log = LogManager.GetLogger(typeof(HttpServer));
 
         #region Public Methods
         public HttpServer(int port, List<Route> routes)

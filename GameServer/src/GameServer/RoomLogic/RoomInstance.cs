@@ -746,7 +746,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         }
 
         /// <summary>
-        /// Ends game with somobody as fool (loser)
+        /// Ends game with somobedy as fool (loser)
         /// </summary>
         private void EndGameFool(long foolConnectionId)
         {
@@ -762,6 +762,9 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
         private void GiveRewardToPlayer(long connectionId, double reward)
         {
+            // todo:
+            // 1) Send to database
+            // 2) Send as ServerSendPackets.Send_PlayerGotReward
 
             playersRewards.Add(connectionId, reward);
         }

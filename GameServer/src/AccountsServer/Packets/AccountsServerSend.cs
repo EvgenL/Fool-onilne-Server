@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using FoolOnlineServer.AccountsServer;
 using FoolOnlineServer.GameServer;
+using Logginf;
 using SuperWebSocket;
 
 namespace FoolOnlineServer.src.AccountsServer.Packets
@@ -62,6 +63,8 @@ namespace FoolOnlineServer.src.AccountsServer.Packets
         /// </summary>
         private static void Send_Xml(WebSocketSession session, XElement body)
         {
+            Log.WriteLine("Send_Xml " + session + ". body: " + body, typeof(AccountsServerSend));
+
             var bytes = Encoding.Unicode.GetBytes(body.ToString());
             session.Send(bytes, 0, bytes.Length);
             session.Close();
