@@ -27,9 +27,15 @@ namespace FoolOnlineServer.src.AccountsServer
         {
             Client client = ClientManager.GetConnectedClient(connectionId);
 
-            // If client somehow was already authorized then ignore
+            // If client was already authorized then ignore.
+            // It will be true if client did suddenly lost connection
+            // and then reconnected in a short period of time
+            // he will use the same tocken in this case
             if (client.Authorized)
             {
+                // Send OK message to client
+                ServerSendPackets.Send_AuthorizedOk(connectionId);
+                ServerSendPackets.Send_UpdateUserData(connectionId);
                 return true;
             }
 

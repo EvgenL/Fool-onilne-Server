@@ -165,7 +165,7 @@ namespace FoolOnlineServer.GameServer
 
         public override string ToString()
         {
-            return $"Client {ConnectionId}: {IP}";
+            return $"User {ConnectionId} {IP}";
         }
     }
 }
