@@ -727,10 +727,14 @@ namespace FoolOnlineServer.GameServer.Packets
         }
 
         // TODO: Use this for withdraw funds
-        public static void UpdateMoney(long connectionId, double money, double frozenMoney)
+        public static void Send_UpdateMoney(long connectionId, double money, double frozenMoney)
         {
             //New packet
             ByteBuffer buffer = new ByteBuffer();
+
+            //Add packet id
+            buffer.WriteLong((long)ServerPacketId.UpdateMoney);
+
             buffer.WriteDouble(money);
             buffer.WriteDouble(frozenMoney);
 
