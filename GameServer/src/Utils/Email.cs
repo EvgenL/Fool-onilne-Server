@@ -27,6 +27,8 @@ namespace FoolOnlineServer.Utils {
 
 
 		public static bool SendEmail(string subject, string message, string receiver, string senderName = "") {
+			LoadSettings();
+
 			if (string.IsNullOrEmpty(Sender)) {
 				Log.WriteLine("Email not set", typeof(Email));
 				return false;
@@ -45,11 +47,13 @@ namespace FoolOnlineServer.Utils {
 			}
 
 			SmtpClient smtp = new SmtpClient(SmtpHost, SmtpPort) {
-				Credentials = new NetworkCredential(Sender, SmtpPassword), EnableSsl = true
+				EnableSsl = true,
+				DeliveryMethod = SmtpDeliveryMethod.Network,
+				UseDefaultCredentials = false,
+				Credentials = new NetworkCredential(Sender, SmtpPassword),
 			};
 
 			try {
-
 			    MailMessage mail = new MailMessage
 			    {
 			        From = new MailAddress(Sender, senderName),
