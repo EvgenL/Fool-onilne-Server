@@ -32,7 +32,11 @@ namespace FoolOnlineServer.GameServer {
 
 
 		private void ProcessCommands() {
-			consoleIsRunning = true;
+
+            // init logger
+		    log4net.Config.XmlConfigurator.Configure();
+
+            consoleIsRunning = true;
 			instance         = this;
 
 			//Command loop

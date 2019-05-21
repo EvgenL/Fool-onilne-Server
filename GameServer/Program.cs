@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Net;
+using System.Configuration;
 using System.Net.Mail;
+using System.Net.Mime;
 using System.Text;
 using FoolOnlineServer.Db;
 using FoolOnlineServer.GameServer;
@@ -26,6 +28,7 @@ namespace FoolOnlineServer
             
             // Check MySql connection. If ok then open server
             DatabaseConnection.TestConnection(onConnected: OpenServer);
+
         }
 
         /// <summary>
@@ -48,7 +51,6 @@ namespace FoolOnlineServer
             TimeServer.TimeServer.Init();
             Email.LoadSettings();
 
-            Payment.SendPayment();
         }
     }
 }

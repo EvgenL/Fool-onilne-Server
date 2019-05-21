@@ -27,7 +27,7 @@ namespace FoolOnlineServer.GameServer.Packets
             RefreshRoomList,
             JoinRoom,
             JoinRandom,
-            GiveUp,
+            GiveUp, // todo not used
             LeaveRoom,
             GetReady,
             GetNotReady,
@@ -68,7 +68,6 @@ namespace FoolOnlineServer.GameServer.Packets
             packets.Add((long)ClientPacketId.RefreshRoomList, Packet_RefreshRoomList);
             packets.Add((long)ClientPacketId.JoinRoom, Packet_JoinRoom);
             packets.Add((long)ClientPacketId.JoinRandom, Packet_JoinRandom);
-            packets.Add((long)ClientPacketId.GiveUp, Packet_GiveUp);
             packets.Add((long)ClientPacketId.LeaveRoom, Packet_LeaveRoom);
             packets.Add((long)ClientPacketId.GetReady, Packet_GetReady);
             packets.Add((long)ClientPacketId.GetNotReady, Packet_GetNotReady);

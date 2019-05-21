@@ -302,19 +302,28 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             //validate
             if (!PlayerIds.Contains(leftPlayerId)) return;
 
-            var client = RemoveClientFromRoom(leftPlayerId);
-
-            //send to everybody 'on player leave'
-            foreach (var playerId in PlayerIds)
+            //if player not won: end game, count him as give up
+            var client = GetClient(leftPlayerId);
+            //if was playing and if player did not won
+            if (State == RoomState.Playing && !playersWon[client.SlotInRoom])
             {
-                ServerSendPackets.Send_OtherPlayerLeftRoom(playerId, playerId, client.SlotInRoom);
+                // player decided to give up
+                GiveUp(leftPlayerId);
+                return;
             }
+            else // else player just decided to leave room so we notify everybody  about it
+            {
+                RemoveClientFromRoom(leftPlayerId);
 
-            
-            Log.WriteLine("Player left room " + client, this);
+                //send to everybody 'on player leave'
+                foreach (var playerId in PlayerIds)
+                {
+                    ServerSendPackets.Send_OtherPlayerLeftRoom(playerId, playerId, client.SlotInRoom);
+                }
+                Log.WriteLine("Player left room " + client, this);
 
-            PlayerNumberChanged();
-
+                PlayerNumberChanged();
+            }
         }
 
         private void Kick(long connectionId, string reason)

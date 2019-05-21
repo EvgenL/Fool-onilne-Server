@@ -22,12 +22,7 @@ namespace FoolOnlineServer.Db
 
         #region Open/close connection
 
-        /// <summary>
-        /// The connection sring.
-        /// Can be changed through launch arguments 
-        /// with use of an argument connectionString=...
-        /// </summary>
-        public static string ConnectionString = "";
+        private static string ConnectionString = "";
 
         private static bool VerboseLogging;
 
@@ -48,6 +43,24 @@ namespace FoolOnlineServer.Db
         {
             var configReader = new AppSettingsReader();
             VerboseLogging = (bool)configReader.GetValue("verboseLogging", typeof(bool));
+
+            // read connection string from config
+            if (ConnectionString == "")
+            {
+                try
+                {
+                    ConnectionString = (string) configReader.GetValue("connectionString", typeof(string));
+                    Log.WriteLine("Connecting to database with conneciton string: " + ConnectionString,
+                        typeof(DatabaseConnection));
+                }
+                catch (Exception e)
+                {
+                    // read default if wasn't set
+                    ConnectionString = (string) configReader.GetValue("defaultConnectionString", typeof(string));
+                    Log.WriteLine("Using default conneciton string: " + ConnectionString,
+                        typeof(DatabaseConnection));
+                }
+            }
 
             if (presistentConnection == null
                 || presistentConnection.State == ConnectionState.Closed

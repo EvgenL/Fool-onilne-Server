@@ -50,7 +50,7 @@ namespace FoolOnlineServer.src.AccountsServer.Packets
                 new XElement("ErrorInfo",
                     new XElement("Code", (int)code),
                     new XElement("CodeString", code.ToString()),
-                    new XElement("Message", message)
+                    new XElement("Message", message ?? "") //message == null ? "" : message
                     )
             );
             //Send 
