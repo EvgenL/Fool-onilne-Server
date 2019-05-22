@@ -23,8 +23,8 @@ namespace FoolOnlineServer.HTTPServer {
 		public static Payment CreatePayment(long userId, float sum, Type type, string requisites = "") {
 			MySqlCommand command = new MySqlCommand {
 				CommandText = "INSERT INTO `payment` "                        +
-							"(`user_id`, `sum`, `created`, `status`, `requisites`) VALUES " +
-							"(@user_id, @sum, @time, @status, @requisites);"
+							"(`user_id`, `sum`, `created`, `status`, `type`, `requisites`) VALUES " +
+							"(@user_id, @sum, @time, @status, @type, @requisites);"
 			};
 
 			command.Parameters.AddWithValue("@user_id",    userId);
