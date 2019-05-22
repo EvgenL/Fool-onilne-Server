@@ -74,7 +74,8 @@ namespace FoolOnlineServer.TimeServer.Listeners {
 
 			// Помечаем записи в базе как отправленные
 			MessageSent();
-			Log.WriteLine("Payments sent!", typeof(Payments));
+            
+			Log.WriteLine($"Payments sent to {receiver}!", typeof(Payments));
 		}
 
 
