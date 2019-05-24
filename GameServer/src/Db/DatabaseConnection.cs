@@ -118,9 +118,9 @@ namespace FoolOnlineServer.Db
         /// Executes command with no return
         /// </summary>
         /// <param name="command">command to execute</param>
-        public static void ExecuteNonQuery(MySqlCommand command)
+        public static void ExecuteNonQuery(MySqlCommand command, bool printExeption = true)
         {
-            ExecuteCommand(command, SqlCommandType.ExecuteNonQuery);
+            ExecuteCommand(command, SqlCommandType.ExecuteNonQuery, printExeption);
         }
         /// <summary>
         /// Executes command with return of scalar object
@@ -135,7 +135,7 @@ namespace FoolOnlineServer.Db
         /// <summary>
         /// Executes command 
         /// </summary>
-        private static object ExecuteCommand(MySqlCommand command, SqlCommandType commandType)
+        private static object ExecuteCommand(MySqlCommand command, SqlCommandType commandType, bool printExeption = true)
         {
             // Connect to mysql if wasn't
             ConnectionOpen();
@@ -163,8 +163,9 @@ namespace FoolOnlineServer.Db
             }
             catch (Exception e)
             {
-                // print if error occured 
-                Log.WriteLine(e.Message, typeof(DatabaseConnection));
+                if (printExeption)
+                    // print if error occured 
+                    Log.WriteLine(e.Message, typeof(DatabaseConnection));
             }
 
             return null;
@@ -229,8 +230,13 @@ namespace FoolOnlineServer.Db
 
             // create table
             command.CommandText =
-                "CREATE TABLE `accounts` (\r\n  `UserId` bigint(20) unsigned NOT NULL AUTO_INCREMENT,\r\n  `Nickname` varchar(20) NOT NULL,\r\n  `Password` varchar(40) NOT NULL,\r\n  `Email` varchar(50) NOT NULL,\r\n  `Money` double unsigned DEFAULT \'0\',\r\n  `MoneyFrozen` double unsigned DEFAULT \'0\',\r\n  `AvatarFile` varchar(45) DEFAULT NULL,\r\n  PRIMARY KEY (`UserId`,`Email`,`Nickname`),\r\n  UNIQUE KEY `ID_UNIQUE` (`UserId`),\r\n  UNIQUE KEY `Email_UNIQUE` (`Email`)\r\n) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COMMENT=\'Table for storing user account information\';\r\n";
+                "CREATE TABLE IF NOT EXISTS `accounts` (\r\n  `UserId` bigint(20) unsigned NOT NULL AUTO_INCREMENT,\r\n  `Nickname` varchar(20) NOT NULL,\r\n  `Password` varchar(40) NOT NULL,\r\n  `Email` varchar(50) NOT NULL,\r\n  `Money` double unsigned DEFAULT \'0\',\r\n  `MoneyFrozen` double unsigned DEFAULT \'0\',\r\n  `AvatarFile` varchar(45) DEFAULT NULL,\r\n  PRIMARY KEY (`UserId`,`Email`,`Nickname`),\r\n  UNIQUE KEY `ID_UNIQUE` (`UserId`),\r\n  UNIQUE KEY `Email_UNIQUE` (`Email`)\r\n) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COMMENT=\'Table for storing user account information\';\r\n";
             ExecuteNonQuery(command);
+
+            // add avatar collumn if not exists
+            command.CommandText =
+                "ALTER TABLE accounts ADD  `AvatarFile` varchar(45) DEFAULT NULL";
+            ExecuteNonQuery(command, false);
 
 
 
