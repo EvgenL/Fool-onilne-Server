@@ -1,8 +1,11 @@
-﻿using System.IO;
+﻿using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using Evgen.Byffer;
 using FoolOnlineServer.AccountsServer;
 using FoolOnlineServer.GameServer.RoomLogic;
 using FoolOnlineServer.src.AccountsServer;
+using FoolOnlineServer.src.GameServer.Clients;
 
 namespace FoolOnlineServer.GameServer.Packets
 {
@@ -142,7 +145,7 @@ namespace FoolOnlineServer.GameServer.Packets
             AccountManager.WithdrawFunds(connectionId, sum, requisites);
         }
 
-        protected void Packet_UpdateAvatar(long connectionId, byte[] data)
+        protected void Packet_UloadAvatar(long connectionId, byte[] data)
         {
             ByteBuffer buffer = new ByteBuffer();
             buffer.WriteBytes(data);
@@ -150,7 +153,7 @@ namespace FoolOnlineServer.GameServer.Packets
             //Skip packet id
             buffer.ReadLong();
 
-            //Read image butes
+            //Read image bytes
             byte[] imageBytes = buffer.ReadBytes(buffer.Length());
 
 
@@ -160,15 +163,30 @@ namespace FoolOnlineServer.GameServer.Packets
             // create directory if not exists
             Directory.CreateDirectory(avatarsFolderName);
 
+
+            // TODO read path from DB and delete old avatar file
+
+            // find out the format of image
+            string format = AvatarsManager.ByteArrayFormat(imageBytes);
+
             // write to file
-            var stream = File.Create(avatarsFolderName + "/" + imageBytes.GetHashCode() + ".png");
+            string filePath = avatarsFolderName + "/" + imageBytes.GetHashCode() + format;
+
+            var stream = File.Create(filePath);
             stream.Write(imageBytes, 0, imageBytes.Length);
             stream.Close();
 
-
+            // todo if... send avatar error
 
             // TODO update avatar in db
+
+            // test: send avatar back
+            string urlPath = "http://" +
+                             AccountsServer.AccountsServer.GameServerIp + ":" + HTTPServer.HTTPServer.Port +
+                             "/" + filePath;            
+            ServerSendPackets.Send_UpdateUserAvatar(connectionId, connectionId, urlPath);
         }
+
 
     }
 }

@@ -83,6 +83,7 @@
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -107,10 +108,11 @@
     <Compile Include="src\Db\FoolUser.cs" />
     <Compile Include="src\Db\ServerSettings.cs" />
     <Compile Include="src\Extensions\XElementExtensions.cs" />
-    <Compile Include="src\GameServer\ClientManager.cs" />
+    <Compile Include="src\GameServer\Clients\AvatarsManager.cs" />
+    <Compile Include="src\GameServer\Clients\ClientManager.cs" />
     <Compile Include="src\GameServer\Packets\PacketHandlerDataLayer.cs" />
     <Compile Include="src\GameServer\TokenManager.cs" />
-    <Compile Include="src\GameServer\Client.cs" />
+    <Compile Include="src\GameServer\Clients\Client.cs" />
     <Compile Include="src\ConsoleCommands\ConsoleThread.cs" />
     <Compile Include="src\GameServer\Constants.cs" />
     <Compile Include="src\Db\DatabaseConnection.cs" />
@@ -125,6 +127,7 @@
     <Compile Include="src\GameServer\StaticParameters.cs" />
     <Compile Include="src\GameServer\Token.cs" />
     <Compile Include="src\HTTPServer\HTTPServer.cs" />
+    <Compile Include="src\HTTPServer\Pages\Avatars\AvatarFile.cs" />
     <Compile Include="src\HTTPServer\Pages\Home.cs" />
     <Compile Include="src\HTTPServer\Pages\Payment\PaymentFail.cs" />
     <Compile Include="src\HTTPServer\Pages\Payment\PaymentResult.cs" />

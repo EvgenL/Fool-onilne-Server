@@ -80,7 +80,7 @@ namespace FoolOnlineServer.GameServer.Packets
 
             // ACCOUNT
             packets.Add((long)ClientPacketId.WithdrawFunds, Packet_WithdrawFunds);
-            packets.Add((long)ClientPacketId.UpdateAvatar, Packet_UpdateAvatar);
+            packets.Add((long)ClientPacketId.UpdateAvatar, Packet_UloadAvatar);
         }
 
         /// <summary>

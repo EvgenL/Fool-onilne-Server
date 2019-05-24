@@ -54,7 +54,8 @@ namespace FoolOnlineServer.GameServer.Packets
             PlayerWon,
 
             // ACCOUNT
-            UpdateMoney
+            UpdateMoney,
+            UpdateUserAvatar
         }
        
 
@@ -741,5 +742,25 @@ namespace FoolOnlineServer.GameServer.Packets
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());
         }
+
+        public static void Send_UpdateUserAvatar(long connectionIdReciever, long connectionIdAvatarHolder, string path)
+        {
+            //New packet
+            ByteBuffer buffer = new ByteBuffer();
+
+            //Add packet id
+            buffer.WriteLong((long)ServerPacketId.UpdateUserAvatar);
+
+            // Add Id of Avatar Holder
+            buffer.WriteLong(connectionIdAvatarHolder);
+
+            // Add avatar
+            buffer.WriteString(path);
+
+            //Send packet
+            SendDataTo(connectionIdReciever, buffer.ToArray());
+        }
+
+        
     }
 }

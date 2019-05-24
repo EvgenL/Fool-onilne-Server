@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using FoolOnlineServer.HTTPServer.Pages.Avatars;
 using SimpleHttpServer;
 using SimpleHttpServer.Models;
 using SimpleHttpServer.RouteHandlers;
@@ -33,12 +34,19 @@ namespace FoolOnlineServer.HTTPServer {
 					UrlRegex = "^\\/payment_success\\/(.*)$",
 					Method   = "GET"
 				},
-				// Сюда попадает при неудачной оплате
-				new Route() {
-					Callable = Pages.Payment.PaymentFail.Get,
-					UrlRegex = "^\\/payment_fail\\/(.*)$",
-					Method   = "GET"
-				},
+			    // Сюда попадает при неудачной оплате
+			    new Route() {
+			        Callable = Pages.Payment.PaymentFail.Get,
+			        UrlRegex = "^\\/payment_fail\\/(.*)$",
+			        Method   = "GET"
+			    },
+
+			    // Скачивание аватарки
+			    new Route() {
+			        Callable = Pages.Avatars.AvatarFile.Get,
+			        UrlRegex = "^\\/avatars\\/(.*)$",
+			        Method   = "GET"
+			    },
 				/*new Route() {
 						Callable = Static,
 						UrlRegex = "^\\/Static\\/(.*)$",
