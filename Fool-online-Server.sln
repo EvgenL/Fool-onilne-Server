@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2026
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fool-online-Server", "GameServer\Fool-online-Server.csproj", "{C7FB4298-9B5C-448D-8BB9-41DDB314A820}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoolOnlineServer", "GameServer\FoolOnlineServer.csproj", "{C7FB4298-9B5C-448D-8BB9-41DDB314A820}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Logging", "Logging\Logging.csproj", "{C4FA5CEB-7137-4CB8-AF82-D112E15B678A}"
 EndProject

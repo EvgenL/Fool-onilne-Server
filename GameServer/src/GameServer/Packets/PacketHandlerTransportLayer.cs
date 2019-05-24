@@ -38,7 +38,8 @@ namespace FoolOnlineServer.GameServer.Packets
             CoverCardOnTable,
 
             // ACCOUNT
-            WithdrawFunds
+            WithdrawFunds,
+            UpdateAvatar
         }
 
         /// <summary>
@@ -79,6 +80,7 @@ namespace FoolOnlineServer.GameServer.Packets
 
             // ACCOUNT
             packets.Add((long)ClientPacketId.WithdrawFunds, Packet_WithdrawFunds);
+            packets.Add((long)ClientPacketId.UpdateAvatar, Packet_UpdateAvatar);
         }
 
         /// <summary>

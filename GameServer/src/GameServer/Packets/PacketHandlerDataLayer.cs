@@ -1,4 +1,5 @@
-﻿using Evgen.Byffer;
+﻿using System.IO;
+using Evgen.Byffer;
 using FoolOnlineServer.AccountsServer;
 using FoolOnlineServer.GameServer.RoomLogic;
 using FoolOnlineServer.src.AccountsServer;
@@ -126,7 +127,7 @@ namespace FoolOnlineServer.GameServer.Packets
             RoomManager.CoverCardOnTable(connectionId, cardOnTableCode, cardDroppedCode);
         }
 
-        protected  void Packet_WithdrawFunds(long connectionId, byte[] data)
+        protected void Packet_WithdrawFunds(long connectionId, byte[] data)
         {
             ByteBuffer buffer = new ByteBuffer();
             buffer.WriteBytes(data);
@@ -140,5 +141,34 @@ namespace FoolOnlineServer.GameServer.Packets
 
             AccountManager.WithdrawFunds(connectionId, sum, requisites);
         }
+
+        protected void Packet_UpdateAvatar(long connectionId, byte[] data)
+        {
+            ByteBuffer buffer = new ByteBuffer();
+            buffer.WriteBytes(data);
+
+            //Skip packet id
+            buffer.ReadLong();
+
+            //Read image butes
+            byte[] imageBytes = buffer.ReadBytes(buffer.Length());
+
+
+            // save file
+            string avatarsFolderName = "avatars"; // todo load from app.config
+
+            // create directory if not exists
+            Directory.CreateDirectory(avatarsFolderName);
+
+            // write to file
+            var stream = File.Create(avatarsFolderName + "/" + imageBytes.GetHashCode() + ".png");
+            stream.Write(imageBytes, 0, imageBytes.Length);
+            stream.Close();
+
+
+
+            // TODO update avatar in db
+        }
+
     }
 }
