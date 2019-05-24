@@ -229,7 +229,7 @@ namespace FoolOnlineServer.Db
 
             // create table
             command.CommandText =
-                "CREATE TABLE IF NOT EXISTS `accounts` (\r   `UserId` bigint(20) unsigned NOT NULL AUTO_INCREMENT,\r   `Nickname` varchar(20) NOT NULL,\r   `Password` varchar(40) NOT NULL,\r   `Email` varchar(50) NOT NULL,\r   `Money` double unsigned DEFAULT \'0\',\r   `MoneyFrozen` double unsigned DEFAULT \'0\',\r   PRIMARY KEY (`UserId`,`Email`,`Nickname`),\r   UNIQUE KEY `ID_UNIQUE` (`UserId`),\r   UNIQUE KEY `Email_UNIQUE` (`Email`)\r ) ENGINE=InnoDB AUTO_INCREMENT=232 DEFAULT CHARSET=utf8mb4 COMMENT=\'Table for storing user account information\'";
+                "CREATE TABLE `accounts` (\r\n  `UserId` bigint(20) unsigned NOT NULL AUTO_INCREMENT,\r\n  `Nickname` varchar(20) NOT NULL,\r\n  `Password` varchar(40) NOT NULL,\r\n  `Email` varchar(50) NOT NULL,\r\n  `Money` double unsigned DEFAULT \'0\',\r\n  `MoneyFrozen` double unsigned DEFAULT \'0\',\r\n  `AvatarFile` varchar(45) DEFAULT NULL,\r\n  PRIMARY KEY (`UserId`,`Email`,`Nickname`),\r\n  UNIQUE KEY `ID_UNIQUE` (`UserId`),\r\n  UNIQUE KEY `Email_UNIQUE` (`Email`)\r\n) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COMMENT=\'Table for storing user account information\';\r\n";
             ExecuteNonQuery(command);
 
 
