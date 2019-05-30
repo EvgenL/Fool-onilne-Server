@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using FoolOnlineServer.GameServer.Clients;
 using FoolOnlineServer.GameServer.Packets;
 using Logginf;
 using SuperSocket.SocketBase;

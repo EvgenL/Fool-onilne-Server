@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using Logginf;
 using SuperWebSocket;
 
-namespace FoolOnlineServer.GameServer
+namespace FoolOnlineServer.GameServer.Clients
 {
     internal static class ClientManager
     {

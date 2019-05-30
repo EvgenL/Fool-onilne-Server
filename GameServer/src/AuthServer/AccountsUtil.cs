@@ -1,8 +1,7 @@
-﻿using System;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using FoolOnlineServer.Db;
 
-namespace FoolOnlineServer.AccountsServer
+namespace FoolOnlineServer.AuthServer
 {
     /// <summary>
     /// Static util methods to help with account managenent
@@ -63,7 +62,7 @@ namespace FoolOnlineServer.AccountsServer
             //if client is for example 1.3.1.2 and server is 1.3 then allow.
             //if client is for example 1.4.2 and server is 1.3 then not allow.
 
-            bool ok = clientVersion.StartsWith(FoolOnlineServer.AccountsServer.AccountsServer.ServerVersion);
+            bool ok = clientVersion.StartsWith(AccountsServer.ServerVersion);
 
             return ok;
         }

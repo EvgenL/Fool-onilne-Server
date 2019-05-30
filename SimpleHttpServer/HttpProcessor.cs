@@ -51,8 +51,9 @@ namespace SimpleHttpServer {
 						string.Format("{0} {1} <p> {2}", response.StatusCode, request.Url, response.ReasonPhrase);
 				}
 			}
+		    response.Headers.Add("Access-Control-Allow-Origin", "*");
 
-			WriteResponse(outputStream, response);
+            WriteResponse(outputStream, response);
 
 			outputStream.Flush();
 			outputStream.Close();

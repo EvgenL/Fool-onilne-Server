@@ -1,9 +1,9 @@
 using FoolOnlineServer.Db;
-using FoolOnlineServer.GameServer;
+using FoolOnlineServer.GameServer.Clients;
 using FoolOnlineServer.HTTPServer;
 using MySql.Data.MySqlClient;
 
-namespace FoolOnlineServer.AccountsServer {
+namespace FoolOnlineServer.AuthServer {
 	public static class AccountManager {
 		public static void WithdrawFunds(long connectionId, float sum, string requisites) {
 			Client client = ClientManager.GetConnectedClient(connectionId);

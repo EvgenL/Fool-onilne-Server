@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Evgen.Byffer;
+using FoolOnlineServer.GameServer.Clients;
 using FoolOnlineServer.GameServer.RoomLogic;
 using Logginf;
 
@@ -173,6 +174,10 @@ namespace FoolOnlineServer.GameServer.Packets
             //Add client's money
             buffer.WriteDouble(client.UserData.Money);
 
+            //Add client's avatar file URL
+            string avatarUrl = client.UserData.AvatarFileUrl;
+            buffer.WriteString(avatarUrl);
+
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());
 
@@ -217,7 +222,7 @@ namespace FoolOnlineServer.GameServer.Packets
                 buffer.WriteInteger(room.DeckSize);
                 //add players count
                 buffer.WriteInteger(room.ConnectedPlayersN);
-                //add player names
+                //add player names and avatars
                 foreach (var name in room.GetPlayerNicknames())
                 {
                     buffer.WriteStringUnicode(name); //using unicode there because player names support all languages
@@ -276,26 +281,27 @@ namespace FoolOnlineServer.GameServer.Packets
             //Add packet id
             buffer.WriteLong((long)ServerPacketId.RoomData);
 
-            //Add players count
-            long[] playerIdsInRoom = room.GetPlayerIds();
-            var playerNicknames = room.GetPlayerNicknames().ToList();
-            buffer.WriteInteger(playerIdsInRoom.Length);
-
-            //Add players
-            foreach (var playerId in playerIdsInRoom)
-            {
-                //Write player's id
-                buffer.WriteLong(playerId);
-                //Write player's slot number
-                int slotN = (room.GetSlotN(playerId));
-                buffer.WriteInteger(slotN);
-                //Write player's nickname
-                buffer.WriteStringUnicode(playerNicknames[0]);
-                playerNicknames.RemoveAt(0);
-            }
+            var clients = room.clientsInRoom;
 
             //Add maxPlayers
             buffer.WriteInteger(room.MaxPlayers);
+
+            //Add players count
+            buffer.WriteInteger(room.ConnectedPlayersN);
+            //Add players
+            foreach (var client in clients)
+            {
+                if (client == null) continue;
+                 
+                //Write player's id
+                buffer.WriteLong(client.ConnectionId);
+                //Write player's slot number
+                buffer.WriteInteger(client.SlotInRoom);
+                //Write player's nickname
+                buffer.WriteStringUnicode(client.UserData.Nickname);
+                //Write player's avatar
+                buffer.WriteString(client.UserData.AvatarFileUrl);
+            }
 
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());
@@ -304,7 +310,7 @@ namespace FoolOnlineServer.GameServer.Packets
         /// <summary>
         /// Sends this when somebody joins room
         /// </summary>
-        public static void Send_OtherPlayerJoinedRoom(long connectionId, long playerIdWhoJoined, int slotN)
+        public static void Send_OtherPlayerJoinedRoom(long connectionId, Client joinedClient)
         {
             //New packet
             ByteBuffer buffer = new ByteBuffer();
@@ -313,14 +319,16 @@ namespace FoolOnlineServer.GameServer.Packets
             buffer.WriteLong((long)ServerPacketId.OtherPlayerJoinedRoom);
 
             //Add player id
-            buffer.WriteLong(playerIdWhoJoined);
+            buffer.WriteLong(joinedClient.ConnectionId);
 
             //Add player's slot number
-            buffer.WriteInteger(slotN);
+            buffer.WriteInteger(joinedClient.SlotInRoom);
 
             //Add nickname
-            var client = ClientManager.GetConnectedClient(playerIdWhoJoined);
-            buffer.WriteStringUnicode(client.UserData.Nickname);
+            buffer.WriteStringUnicode(joinedClient.UserData.Nickname);
+
+            //Add avatar
+            buffer.WriteString(joinedClient.UserData.AvatarFileUrl);
 
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());

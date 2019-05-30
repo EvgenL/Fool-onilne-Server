@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using FoolOnlineServer.GameServer.Clients;
 using FoolOnlineServer.GameServer.Packets;
 using Logginf;
 

@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using FoolOnlineServer.AuthServer;
 
-namespace FoolOnlineServer.src.AccountsServer
+namespace FoolOnlineServer.Db
 {
     /// <summary>
     /// Object returned by database
@@ -16,5 +12,13 @@ namespace FoolOnlineServer.src.AccountsServer
         public string Password;
         public string Email;
         public double Money;
+        public string AvatarFile;
+
+        public string AvatarFileUrl => 
+        string.IsNullOrEmpty(AvatarFile) ?
+        "" : 
+            "http://" +
+              AccountsServer.GameServerIp + ":" + HTTPServer.HTTPServer.Port +
+              "/" + AvatarFile;
     }
 }

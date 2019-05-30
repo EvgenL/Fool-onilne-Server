@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using FoolOnlineServer.src.AccountsServer;
+using FoolOnlineServer.Db;
 
 namespace FoolOnlineServer.GameServer
 {

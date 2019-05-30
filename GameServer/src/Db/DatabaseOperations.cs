@@ -1,10 +1,10 @@
 ﻿using System;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using FoolOnlineServer.AccountsServer;
-using FoolOnlineServer.src.AccountsServer;
-using FoolOnlineServer.src.AccountsServer.Packets;
+using FoolOnlineServer.AuthServer;
+using FoolOnlineServer.AuthServer.Packets;
 using MySql.Data.MySqlClient;
 
 namespace FoolOnlineServer.Db
@@ -44,8 +44,64 @@ namespace FoolOnlineServer.Db
                 Nickname = reader.GetString("Nickname"),
                 Password = reader.GetString("Password"),
                 Email = reader.GetString("Email"),
-                Money = reader.GetDouble("Money")
+                Money = reader.GetDouble("Money"),
+                //AvatarFile = reader.GetString("AvatarFile")
+
             };
+
+            // if avatar is set
+            if (!reader.IsDBNull(6))
+            {
+                user.AvatarFile = reader.GetString("AvatarFile");
+            }
+
+            DatabaseConnection.CloseReader();
+
+            return user;
+        }
+
+        /// <summary>
+        /// Returns FoolUser object from database
+        /// returns null if not registred
+        /// </summary>
+        /// <param name="userId">user's userId</param>
+        public static FoolUser GetUserById(long userId)
+        {
+            // create new command
+            MySqlCommand command = new MySqlCommand();
+            command.CommandText = "SELECT * " +
+                                  "FROM foolonline.accounts " +
+                                  "WHERE UserId=@userId;";
+
+            command.Parameters.AddWithValue("@userId", userId);
+
+            // execute
+            var reader = DatabaseConnection.ExecuteReader(command);
+            // if user doesn't exists
+            if (!reader.HasRows)
+            {
+                DatabaseConnection.CloseReader();
+                return null;
+            }
+
+            reader.Read();
+
+            // read from reader
+            FoolUser user = new FoolUser
+            {
+                UserId = reader.GetInt64("UserId"),
+                Nickname = reader.GetString("Nickname"),
+                Password = reader.GetString("Password"),
+                Email = reader.GetString("Email"),
+                Money = reader.GetDouble("Money"),
+                //AvatarFile = reader.GetString("AvatarFile")
+            };
+
+            // if avatar is set
+            if (!reader.IsDBNull(6))
+            {
+                user.AvatarFile = reader.GetString("AvatarFile");
+            }
 
             DatabaseConnection.CloseReader();
 
@@ -105,5 +161,18 @@ namespace FoolOnlineServer.Db
             return AccountReturnCodes.Ok;
         }
 
+
+        public static void UpdateAvatar(long userId, string path)
+        {
+            // create new command
+            var command = new MySqlCommand();
+            command.CommandText = "UPDATE foolonline.accounts SET `AvatarFile`= @path WHERE UserId=@userId";
+
+            command.Parameters.AddWithValue("@path", path);
+            command.Parameters.AddWithValue("@userId", userId);
+
+            // execute
+            DatabaseConnection.ExecuteNonQuery(command);
+        }
     }
 }

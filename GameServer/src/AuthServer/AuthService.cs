@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FoolOnlineServer.GameServer;
+﻿using FoolOnlineServer.GameServer;
+using FoolOnlineServer.GameServer.Clients;
 using FoolOnlineServer.GameServer.Packets;
 
-namespace FoolOnlineServer.src.AccountsServer
+namespace FoolOnlineServer.AuthServer
 {
     /// <summary>
     /// manages client authorization between accounts server and game server

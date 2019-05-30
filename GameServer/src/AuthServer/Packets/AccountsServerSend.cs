@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 using System.Xml.Linq;
-using FoolOnlineServer.AccountsServer;
 using FoolOnlineServer.GameServer;
 using Logginf;
 using SuperWebSocket;
 
-namespace FoolOnlineServer.src.AccountsServer.Packets
+namespace FoolOnlineServer.AuthServer.Packets
 {
     public enum AccountReturnCodes
     {
@@ -79,8 +74,8 @@ namespace FoolOnlineServer.src.AccountsServer.Packets
             XElement response = new XElement("Response",
                 new XElement("Result", "Ok"),
                 new XElement("LoginData",
-                    new XElement("GameServerIp", FoolOnlineServer.AccountsServer.AccountsServer.GameServerIp), // add game server endpoint
-                    new XElement("GameServerPort", FoolOnlineServer.AccountsServer.AccountsServer.GameServerPort),
+                    new XElement("GameServerIp", AccountsServer.GameServerIp), // add game server endpoint
+                    new XElement("GameServerPort", AccountsServer.GameServerPort),
                     new XElement("Token", token.TokenHash) // add auth token
                 )
             );

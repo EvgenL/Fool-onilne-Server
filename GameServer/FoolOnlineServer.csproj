@@ -98,12 +98,12 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="src\AccountsServer\AccountManager.cs" />
-    <Compile Include="src\AccountsServer\AccountsServer.cs" />
-    <Compile Include="src\AccountsServer\AccountsService.cs" />
-    <Compile Include="src\AccountsServer\AccountsUtil.cs" />
-    <Compile Include="src\AccountsServer\AuthService.cs" />
-    <Compile Include="src\AccountsServer\Packets\AccountsServerSend.cs" />
+    <Compile Include="src\AuthServer\AccountManager.cs" />
+    <Compile Include="src\AuthServer\AccountsServer.cs" />
+    <Compile Include="src\AuthServer\AccountsService.cs" />
+    <Compile Include="src\AuthServer\AccountsUtil.cs" />
+    <Compile Include="src\AuthServer\AuthService.cs" />
+    <Compile Include="src\AuthServer\Packets\AccountsServerSend.cs" />
     <Compile Include="src\ConsoleCommands\ProcessArgs.cs" />
     <Compile Include="src\Db\FoolUser.cs" />
     <Compile Include="src\Db\ServerSettings.cs" />

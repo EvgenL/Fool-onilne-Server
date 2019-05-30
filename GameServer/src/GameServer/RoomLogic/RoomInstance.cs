@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FoolOnlineServer.GameServer.Clients;
 using FoolOnlineServer.GameServer.Packets;
 using Logginf;
 
@@ -68,7 +69,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// <summary>
         /// Client objects of connected clients that are sorted by slot number
         /// </summary>
-        private Client[] clientsInRoom;
+        public Client[] clientsInRoom { get; private set; }
 
         /// <summary>
         /// if room was used more than once
@@ -275,13 +276,21 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             //Send room data to newly connected client
             ServerSendPackets.Send_RoomData(connectionId, this);
 
+            //Send avatars to newly connected client
+            foreach (var enemy in clientsInRoom)
+            {
+                if (!string.IsNullOrEmpty(enemy?.UserData.AvatarFile)) // && enemy != null
+                {
+                    ServerSendPackets.Send_UpdateUserAvatar(connectionId, enemy.ConnectionId, enemy.UserData.AvatarFileUrl);
+                }
+            }
 
             //Send message about this player joined to everybody expect this player
             for (int i = 0; i < PlayerIds.Count; i++)
             {
                 if (PlayerIds[i] != connectionId)
                 {
-                    ServerSendPackets.Send_OtherPlayerJoinedRoom(PlayerIds[i], connectionId, slotN);
+                    ServerSendPackets.Send_OtherPlayerJoinedRoom(PlayerIds[i], client);
                 }
             }
 
@@ -1107,11 +1116,10 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// <summary>
         /// Gets client by connection id (not by slotN)
         /// </summary>
-        private Client GetClient(long connectionId)
+        public Client GetClient(long connectionId)
         {
             return clientsInRoom.First(client => client != null && client.ConnectionId == connectionId);
         }
-
 
         /// <summary>
         /// Inits game. Sets state to Playing.

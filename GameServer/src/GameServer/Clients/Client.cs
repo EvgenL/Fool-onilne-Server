@@ -1,15 +1,12 @@
-﻿using System;
-using System.Net;
-using System.Net.Sockets;
+﻿using System.Net;
 using Evgen.Byffer;
 using FoolOnlineServer.Db;
 using FoolOnlineServer.GameServer.Packets;
 using FoolOnlineServer.GameServer.RoomLogic;
-using FoolOnlineServer.src.AccountsServer;
 using Logginf;
 using SuperWebSocket;
 
-namespace FoolOnlineServer.GameServer
+namespace FoolOnlineServer.GameServer.Clients
 {
 
     /// <summary>
@@ -17,7 +14,7 @@ namespace FoolOnlineServer.GameServer
     /// Wraps WebSocketSession object and prowides methods
     /// to managing it
     /// </summary>
-    class Client
+    public class Client
     {
         /// <summary>
         /// Constructor 

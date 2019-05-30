@@ -1,12 +1,13 @@
 ﻿using System;
-using System.Net.Mime;
 using System.Threading;
 using FoolOnlineServer.Db;
+using FoolOnlineServer.GameServer;
+using FoolOnlineServer.GameServer.Clients;
 using FoolOnlineServer.GameServer.RoomLogic;
 using FoolOnlineServer.TimeServer.Listeners;
 using Logginf;
 
-namespace FoolOnlineServer.GameServer {
+namespace FoolOnlineServer.ConsoleCommands {
 	/// <summary>
 	/// Creates console thread, processes commands.
 	/// </summary>
@@ -64,7 +65,7 @@ namespace FoolOnlineServer.GameServer {
 									+ "Active rooms: "      + RoomManager.ActiveRooms.Count         + "\n"
 									+ "Uptime: "            + (DateTime.Now - startTime);
 
-						Log.WriteLine(text, typeof(GameServer));
+						Log.WriteLine(text, typeof(GameServer.GameServer));
 						break;
 					}
 					case "setSenderEmail": {

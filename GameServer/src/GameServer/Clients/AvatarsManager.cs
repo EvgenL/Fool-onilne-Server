@@ -1,22 +1,51 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using FoolOnlineServer.AuthServer;
+using FoolOnlineServer.Db;
 
-namespace FoolOnlineServer.src.GameServer.Clients
+namespace FoolOnlineServer.GameServer.Clients
 {
     public static class AvatarsManager
     {
-        public static void SaveAvatar(long connectionId, byte[] avatar)
-        {
 
+        public static string UploadAvatar(long connectionId, byte[] imageBytes)
+        {
+            // read path from DB and delete old avatar file
+            Client client = ClientManager.GetConnectedClient(connectionId);
+            long userId = client.UserData.UserId;
+            FoolUser user = DatabaseOperations.GetUserById(userId);
+            if (string.IsNullOrEmpty(user.AvatarFile) && File.Exists(user.AvatarFile))
+            {
+                File.Delete(user.AvatarFile);
+            }
+
+
+            // find out the format of image
+            string format = ByteArrayFileFormat(imageBytes);
+
+            // create directory if not exists
+            string avatarsFolderName = "avatars"; // todo load from app.config
+            Directory.CreateDirectory(avatarsFolderName);
+
+            // write to file
+            string filePath = avatarsFolderName + "/" + imageBytes.GetHashCode() + format;
+
+            var stream = File.Create(filePath);
+            stream.Write(imageBytes, 0, imageBytes.Length);
+            stream.Close();
+
+            // update avatar in db
+            DatabaseOperations.UpdateAvatar(userId, filePath);
+
+            // update avatar in muffered client data
+            client.UserData.AvatarFile = filePath;
+
+            // return: send avatar exact url on server
+            return client.UserData.AvatarFileUrl;
         }
 
-        public static Image ByteArrayToImage(byte[] imageBytes)
+        private static Image ByteArrayToImage(byte[] imageBytes)
         {
             Image image = null;
             using (MemoryStream stream = new MemoryStream(imageBytes))
@@ -27,7 +56,7 @@ namespace FoolOnlineServer.src.GameServer.Clients
             return image;
         }
 
-        public static string ByteArrayFormat(byte[] imageBytes)
+        private static string ByteArrayFileFormat(byte[] imageBytes)
         {
             Image img = AvatarsManager.ByteArrayToImage(imageBytes);
             if (ImageFormat.Jpeg.Equals(img.RawFormat))

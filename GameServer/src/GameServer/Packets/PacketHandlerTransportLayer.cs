@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Evgen.Byffer;
+using FoolOnlineServer.GameServer.Clients;
 using FoolOnlineServer.GameServer.RoomLogic;
 using Logginf;
 

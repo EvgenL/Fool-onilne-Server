@@ -1,22 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Net;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Xml;
-using System.Xml.Linq;
+﻿using System.Xml.Linq;
+using FoolOnlineServer.AuthServer.Packets;
 using FoolOnlineServer.Db;
 using FoolOnlineServer.Extensions;
 using FoolOnlineServer.GameServer;
-using FoolOnlineServer.src.AccountsServer.Packets;
 using Logginf;
 using SuperWebSocket;
 
-namespace FoolOnlineServer.AccountsServer
+namespace FoolOnlineServer.AuthServer
 {
     /// <summary>
     /// methods managing clients registration and auth on server

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Configuration;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -8,16 +7,10 @@ using System.Xml.Linq;
 using FoolOnlineServer.Db;
 using FoolOnlineServer.Extensions;
 using Logginf;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SuperSocket.SocketBase;
 using SuperWebSocket;
 
-
-
-
-
-namespace FoolOnlineServer.AccountsServer
+namespace FoolOnlineServer.AuthServer
 {
     /// <summary>
     /// Server which manages validation of client accounts

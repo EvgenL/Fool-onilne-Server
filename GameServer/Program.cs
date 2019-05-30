@@ -4,10 +4,11 @@ using System.Configuration;
 using System.Net.Mail;
 using System.Net.Mime;
 using System.Text;
+using FoolOnlineServer.AuthServer;
+using FoolOnlineServer.ConsoleCommands;
 using FoolOnlineServer.Db;
 using FoolOnlineServer.GameServer;
 using FoolOnlineServer.HTTPServer.Pages.Payment;
-using FoolOnlineServer.src.ConsoleCommands;
 using FoolOnlineServer.TimeServer.Listeners;
 using FoolOnlineServer.Utils;
 using Logginf;
@@ -40,7 +41,7 @@ namespace FoolOnlineServer
             ConsoleThread.Start();
 
             // Start login server
-            AccountsServer.AccountsServer.ServerStart(5054);
+            AccountsServer.ServerStart(5054);
 
             // Start game server
             GameServer.GameServer.ServerStart(5055);

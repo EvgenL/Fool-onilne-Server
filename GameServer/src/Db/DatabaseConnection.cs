@@ -149,6 +149,7 @@ namespace FoolOnlineServer.Db
                 switch (commandType)
                 {
                     case SqlCommandType.ExecuteReader:
+                        if (ReaderIsBusy) CloseReader();
                         presistentReader = command.ExecuteReader();
                         ReaderIsBusy = true;
                         return presistentReader;

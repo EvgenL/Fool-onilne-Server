@@ -2,10 +2,10 @@
 using System.Drawing.Imaging;
 using System.IO;
 using Evgen.Byffer;
-using FoolOnlineServer.AccountsServer;
+using FoolOnlineServer.AuthServer;
+using FoolOnlineServer.Db;
+using FoolOnlineServer.GameServer.Clients;
 using FoolOnlineServer.GameServer.RoomLogic;
-using FoolOnlineServer.src.AccountsServer;
-using FoolOnlineServer.src.GameServer.Clients;
 
 namespace FoolOnlineServer.GameServer.Packets
 {
@@ -156,34 +156,10 @@ namespace FoolOnlineServer.GameServer.Packets
             //Read image bytes
             byte[] imageBytes = buffer.ReadBytes(buffer.Length());
 
+            // upload
+            var urlPath = AvatarsManager.UploadAvatar(connectionId, imageBytes);
 
-            // save file
-            string avatarsFolderName = "avatars"; // todo load from app.config
-
-            // create directory if not exists
-            Directory.CreateDirectory(avatarsFolderName);
-
-
-            // TODO read path from DB and delete old avatar file
-
-            // find out the format of image
-            string format = AvatarsManager.ByteArrayFormat(imageBytes);
-
-            // write to file
-            string filePath = avatarsFolderName + "/" + imageBytes.GetHashCode() + format;
-
-            var stream = File.Create(filePath);
-            stream.Write(imageBytes, 0, imageBytes.Length);
-            stream.Close();
-
-            // todo if... send avatar error
-
-            // TODO update avatar in db
-
-            // test: send avatar back
-            string urlPath = "http://" +
-                             AccountsServer.AccountsServer.GameServerIp + ":" + HTTPServer.HTTPServer.Port +
-                             "/" + filePath;            
+            // send to player OK message
             ServerSendPackets.Send_UpdateUserAvatar(connectionId, connectionId, urlPath);
         }
 
