@@ -5,6 +5,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using FoolOnlineServer.AuthServer;
 using FoolOnlineServer.AuthServer.Packets;
+using FoolOnlineServer.GameServer.Clients;
+using FoolOnlineServer.GameServer.Packets;
 using MySql.Data.MySqlClient;
 
 namespace FoolOnlineServer.Db
@@ -129,10 +131,17 @@ namespace FoolOnlineServer.Db
             command.Parameters.AddWithValue("@nickname", nickname);
             command.Parameters.AddWithValue("@password", password);
             command.Parameters.AddWithValue("@email", email);
-
-
             // execute
             DatabaseConnection.ExecuteNonQuery(command);
+
+
+            // to1do временно даём каждому только зарегестрированому 100р (пока что)
+            //command = new MySqlCommand();
+            //command.CommandText = "UPDATE `foolonline`.`accounts` " +
+            //                     "SET Money=100 WHERE `Nickname`=@nickname";
+            //command.Parameters.AddWithValue("@nickname", nickname);
+            // execute
+            //DatabaseConnection.ExecuteNonQuery(command);
 
             return AccountReturnCodes.Ok;
         }
@@ -160,7 +169,7 @@ namespace FoolOnlineServer.Db
 
             return AccountReturnCodes.Ok;
         }
-
+        
 
         public static void UpdateAvatar(long userId, string path)
         {
@@ -173,6 +182,27 @@ namespace FoolOnlineServer.Db
 
             // execute
             DatabaseConnection.ExecuteNonQuery(command);
+        }
+
+        public static void AddMoney(long userId, double sum)
+        {
+            var user = DatabaseOperations.GetUserById(userId);
+
+            // create new command
+            var command = new MySqlCommand();
+            command.CommandText = "UPDATE foolonline.accounts SET `Money`= `Money` + @reward WHERE UserId=@userId";
+            command.Parameters.AddWithValue("@reward", sum);
+            command.Parameters.AddWithValue("@userId", userId);
+
+            // execute
+            DatabaseConnection.ExecuteNonQuery(command);
+
+            var client = ClientManager.GetConnectedClientByUserId(userId);
+            if (client != null)
+            {
+                client.UserData.Money += sum;
+                ServerSendPackets.Send_UpdateUserData(client.ConnectionId);
+            }
         }
     }
 }

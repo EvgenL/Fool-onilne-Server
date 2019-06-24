@@ -27,7 +27,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// <param name="connectionId">Room creator connection id</param>
         /// <param name="maxPlayers">Max players in room</param>
         /// <param name="deckSize">Deck size in room</param>
-        public static void CreateRoom(long connectionId, int maxPlayers, int deckSize)
+        public static void CreateRoom(long connectionId, int maxPlayers, int deckSize, double bet)
         {
             var client = ClientManager.GetConnectedClient(connectionId);
             Log.WriteLine("[" + client + "] wants to create room.", typeof(RoomManager));
@@ -49,7 +49,12 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             RoomInstance room = CreateNewRoomInstance(connectionId);
             room.MaxPlayers = maxPlayers;
             room.DeckSize = deckSize;
+#if TEST_MODE_TWO_CARDS
+            room.DeckSize = 4;
+#endif
             room.HostId = connectionId;
+            room.Bet = bet;
+
 
             //Client joins random room
             if (room.JoinRoom(connectionId))

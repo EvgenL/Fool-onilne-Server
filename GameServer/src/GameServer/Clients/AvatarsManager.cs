@@ -38,7 +38,7 @@ namespace FoolOnlineServer.GameServer.Clients
             // update avatar in db
             DatabaseOperations.UpdateAvatar(userId, filePath);
 
-            // update avatar in muffered client data
+            // update avatar in buffered client data
             client.UserData.AvatarFile = filePath;
 
             // return: send avatar exact url on server

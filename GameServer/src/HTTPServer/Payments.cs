@@ -1,6 +1,8 @@
 using System;
+using System.Security.Cryptography;
 using FoolOnlineServer.Db;
 using FoolOnlineServer.GameServer;
+using FoolOnlineServer.GameServer.Clients;
 using MySql.Data.MySqlClient;
 
 namespace FoolOnlineServer.HTTPServer {
@@ -100,50 +102,7 @@ namespace FoolOnlineServer.HTTPServer {
 			var reader = DatabaseConnection.ExecuteReader(command);
 			return new Payment(reader);
 		}
-
-
-		public static void PayUserMoney(long userId, double sum) {
-			Console.WriteLine("user_id: " + userId);
-			MySqlCommand command = new MySqlCommand {
-				CommandText = "SELECT * "               +
-							"FROM foolonline.accounts " +
-							"WHERE UserId=@UserId;"
-			};
-
-			command.Parameters.AddWithValue("@UserId", userId);
-			var reader = DatabaseConnection.ExecuteReader(command);
-
-			if (!reader.HasRows) {
-				reader.Close();
-				DatabaseConnection.CloseReader();
-				Console.WriteLine("Has no rows");
-				return;
-			}
-
-			reader.Read();
-
-			if (reader.IsDBNull(reader.GetOrdinal("UserId"))) {Console.WriteLine("Has no user_id");return;}
-
-			double money = 0;
-			if (!reader.IsDBNull(reader.GetOrdinal("Money"))) {
-				money = reader.GetDouble("Money");
-			}
-			money += sum;
-
-			reader.Close();
-			DatabaseConnection.CloseReader();
-
-			command = new MySqlCommand {
-				CommandText = "UPDATE `accounts` SET `Money`=@money WHERE UserId=@UserId;"
-			};
-
-			command.Parameters.AddWithValue("@UserId", userId);
-			command.Parameters.AddWithValue("@money",  money);
-
-			DatabaseConnection.ExecuteNonQuery(command);
-		}
-
-
+        
 		public class Payment {
 			public Payment(MySqlDataReader reader) {
 				if (!reader.HasRows) {

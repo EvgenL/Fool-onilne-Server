@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using FoolOnlineServer.Db;
+using FoolOnlineServer.GameServer.Clients;
+using FoolOnlineServer.GameServer.Packets;
 using FoolOnlineServer.HTTPServer.PaymentServices;
 using SimpleHttpServer.Models;
 
@@ -58,7 +61,14 @@ namespace FoolOnlineServer.HTTPServer.Pages.Payment {
 				Payments.SetExternalPaymentId(payment.PaymentId, extPaymentId);
 			}
 
-			Payments.PayUserMoney(payment.UserId, payment.Sum);
+		    var client = ClientManager.GetConnectedClientByUserId(payment.UserId);
+		    if (client != null)
+		    {
+		        ServerSendPackets.Send_Message(client.ConnectionId, $"Платеж проведен успешно. Добавлено {payment.Sum}");
+            }
+
+            DatabaseOperations.AddMoney(payment.UserId, payment.Sum);
+
 		}
 	}
 }

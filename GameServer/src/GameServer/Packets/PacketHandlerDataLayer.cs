@@ -46,10 +46,12 @@ namespace FoolOnlineServer.GameServer.Packets
 
             //Read max players
             int maxPlayers = buffer.ReadInteger();
-            //Read deckSize players
+            //Read deckSize
             int deckSize = buffer.ReadInteger();
+            //Read bet
+            double bet = buffer.ReadDouble();
 
-            RoomManager.CreateRoom(connectionId, maxPlayers, deckSize);
+            RoomManager.CreateRoom(connectionId, maxPlayers, deckSize, bet);
         }
 
         protected  void Packet_RefreshRoomList(long connectionId, byte[] data)
@@ -142,7 +144,7 @@ namespace FoolOnlineServer.GameServer.Packets
             float sum = buffer.ReadFloat();
             string requisites = buffer.ReadString();
 
-            AccountManager.WithdrawFunds(connectionId, sum, requisites);
+            ClientManager.WithdrawFunds(connectionId, sum, requisites);
         }
 
         protected void Packet_UloadAvatar(long connectionId, byte[] data)

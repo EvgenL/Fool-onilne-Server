@@ -1,8 +1,10 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FoolOnlineServer.Db;
 using FoolOnlineServer.GameServer.Clients;
 using FoolOnlineServer.GameServer.Packets;
 using Logginf;
@@ -133,7 +135,8 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// <summary>
         /// Money bet in this room
         /// </summary>
-        private int bet;
+        public double Bet;
+        private double _betLeft;
 
         //Game rules fields
         #endregion
@@ -261,29 +264,26 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                 return false;
             }
 
+            var client = ClientManager.GetConnectedClient(connectionId);
+            if (client.UserData.Money < Bet)
+            {
+                ServerSendPackets.Send_Message(connectionId, $"Вам нужно {Bet}, чтобы сделать ставку в этой комнате.");
+                return false;
+            }
+
             //Add to player list
             PlayerIds.Add(connectionId);
-            clientsInRoom[slotN] = ClientManager.GetConnectedClient(connectionId);
+            clientsInRoom[slotN] = client;
 
             Log.WriteLine($"{GetClient(connectionId)} joined room.", this);
 
             //Set client's status to InRoom
-            Client client = GetClient(connectionId);
             client.IsInRoom = true;
             client.RoomId = RoomId;
             client.SlotInRoom = slotN;
 
             //Send room data to newly connected client
             ServerSendPackets.Send_RoomData(connectionId, this);
-
-            //Send avatars to newly connected client
-            foreach (var enemy in clientsInRoom)
-            {
-                if (!string.IsNullOrEmpty(enemy?.UserData.AvatarFile)) // && enemy != null
-                {
-                    ServerSendPackets.Send_UpdateUserAvatar(connectionId, enemy.ConnectionId, enemy.UserData.AvatarFileUrl);
-                }
-            }
 
             //Send message about this player joined to everybody expect this player
             for (int i = 0; i < PlayerIds.Count; i++)
@@ -338,6 +338,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         private void Kick(long connectionId, string reason)
         {
             LeaveRoom(connectionId); //todo send reason to player
+            ServerSendPackets.Send_Message(connectionId, reason);
         }
 
         private void ClearLists()
@@ -364,6 +365,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
             PlayerIds.Remove(playerId);
             clientsInRoom[client.SlotInRoom] = null;
+            PlayerIds.Remove(playerId);
             return client;
         }
 
@@ -446,14 +448,16 @@ namespace FoolOnlineServer.GameServer.RoomLogic
             var client = GetClient(connectionId);
             if (!playersWon[client.SlotInRoom])
             {
+                // loser pays bet
+                GiveRewardToPlayer(connectionId, -Bet);
+
                 //divide rewards
-                double betLeft = bet - (bet / (playersWinningOrder.Count + 1));
-                int playersNotWon = MaxPlayers - playersWinningOrder.Count + 1;
+                int playersNotWon = MaxPlayers - playersWinningOrder.Count;
                 foreach (var playierId in PlayerIds)
                 {
                     if (!playersRewards.ContainsKey(playierId))
                     {
-                        playersRewards.Add(playierId, betLeft / playersNotWon);
+                        GiveRewardToPlayer(playierId, _betLeft / (double)(playersNotWon));
                     }
                 }
 
@@ -606,26 +610,156 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         }
 
         /// <summary>
-        /// Returns count of non-covered cards on table
+        /// This means that defender did gave up his defence and picks up cards
         /// </summary>
-        private int CardsToBeatCount()
+        private void DefenderPicksUp()
         {
-            int result = 0;
-
+            //Put cards from table to defender's hand
+            List<string> defenderHand = playerHands[defender.SlotInRoom];
             foreach (var cardPair in cardsOnTable)
             {
-                if (cardPair.Length > 1)
+                defenderHand.Add(cardPair[0]);
+                if (cardPair.Length > 1 && cardPair[1] != null)
                 {
-                    if (cardPair[0] == null || cardPair[0] == ""
-                                            || cardPair[1] == null || cardPair[1] == "")
-                    {
-                        result++;
-                    }
+                    defenderHand.Add(cardPair[1]);
                 }
             }
 
-            return result;
+            foreach (var playerId in PlayerIds)
+            {
+                ServerSendPackets.Send_DefenderPicksCards(playerId,
+                    defender.ConnectionId, defender.SlotInRoom, cardsOnTable.Count);
+            }
+
+            cardsOnTable.Clear();
         }
+
+        /// <summary>
+        /// Recieved on somebody passes a turn
+        /// </summary>
+        public void Pass(long passedPlayerId)
+        {
+            if (State != RoomState.Playing)
+            {
+                return;
+            }
+
+            if (cardsOnTable.Count == 0) return;
+
+            Client passedClient = GetClient(passedPlayerId);
+
+            //did he already passed
+            int slotN = GetSlotN(passedPlayerId);
+            if (playersPass[slotN] || playersWon[slotN]) return;
+
+
+            if (passedPlayerId == defender.ConnectionId)
+            {
+                if (!AllCardsBeaten())
+                {
+                    defenderGaveUpDefence = true;
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else if (passedClient == attacker)
+            {
+                attackerPassedPriority = true;
+            }
+            else if (!attackerPassedPriority)
+            {
+                //you can't attack
+                return;
+            }
+
+
+            //Send to other players
+            foreach (var otherPlayer in PlayerIds)
+            {
+                if (otherPlayer == passedPlayerId) continue;
+
+                ServerSendPackets.Send_OtherPlayerPassed(otherPlayer, passedPlayerId, slotN);
+            }
+
+            playersPass[slotN] = true;
+
+
+            //if everybody are passed (also defender)
+            if (EverybodyPassed())
+            {
+                //send defender takes cards
+                DefenderPicksUp();
+
+                NextTurnDelay();
+            }
+            else if (EverybodyButDefenderPassed())
+            {
+                if (AllCardsBeaten())
+                {
+                    // send beaten
+                    foreach (var playerId in PlayerIds)
+                    {
+                        ServerSendPackets.Send_Beaten(playerId);
+                    }
+                    NextTurnDelay();
+
+                    TableToDiscard();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Recieved on somebody covers card on table
+        /// </summary>
+        public void CoverCardOnTable(long coveredPlayerId, string cardCodeOnTable, string cardCodeDropped)
+        {
+            //if player doesnt have this card then ignore
+            if (!playerHands[GetSlotN(coveredPlayerId)].Contains(cardCodeDropped))
+            {
+                return;
+            }
+
+            int cardOnTableIndex = FindNotCoveredCardOnTable(cardCodeOnTable);
+
+            //if there is no this card
+            if (cardOnTableIndex < 0)
+            {
+                //TODO send cant cover
+                //ServerSendPackets.Send_CantCoverThisCard(connectionId, cardCodeOnTable, cardCodeDropped);
+                return;
+            }
+
+            if (CanCoverThisCardWith(cardCodeOnTable, cardCodeDropped))
+            {
+                //Send to everybody in room
+                int slotN = GetSlotN(coveredPlayerId);
+                foreach (var recieverPlayerId in PlayerIds)
+                {
+                    if (recieverPlayerId == coveredPlayerId) continue;
+
+                    ServerSendPackets.Send_OtherPlayerCoversCard(recieverPlayerId, coveredPlayerId, slotN,
+                        cardCodeOnTable, cardCodeDropped);
+                }
+
+                //Set card [cardOnTableIndex] to covered
+                cardsOnTable[cardOnTableIndex][1] = cardCodeDropped;
+                playerHands[GetSlotN(coveredPlayerId)].Remove(cardCodeDropped);
+
+                TableUpdated(coveredPlayerId);
+            }
+            else
+            {
+                //TODO send cant cover
+                //ServerSendPackets.Send_CantCoverThisCard(connectionId, cardCodeOnTable, cardCodeDropped);
+            }
+        }
+
+        #endregion
+
+        #region Gameplay rules methods
+
 
         /// <summary>
         /// Send OK to player who dropped card
@@ -749,11 +883,10 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
             playersWon[playerSlotN] = true;
 
-            playersWinningOrder.Push(GetClient(connectionId));
 
             //calculate reward for him
-
-            double reward = bet / (playersWinningOrder.Count + 1d);
+            _betLeft /= 2f;
+            double reward = _betLeft;
             GiveRewardToPlayer(connectionId, reward);
 
             foreach (var otherPlayerId in PlayerIds)
@@ -768,7 +901,8 @@ namespace FoolOnlineServer.GameServer.RoomLogic
         /// </summary>
         private void EndGameFool(long foolConnectionId)
         {
-            GiveRewardToPlayer(foolConnectionId, bet);
+            // loser pays bet
+            GiveRewardToPlayer( foolConnectionId, -Bet);
 
             foreach (var player in PlayerIds)
             {
@@ -780,11 +914,15 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
         private void GiveRewardToPlayer(long connectionId, double reward)
         {
-            // todo:
-            // 1) Send to database
-            // 2) Send as ServerSendPackets.Send_PlayerGotReward
-
-            playersRewards.Add(connectionId, reward);
+            var client = ClientManager.GetConnectedClient(connectionId);
+            playersWinningOrder.Push(client);
+            DatabaseOperations.AddMoney(client.UserData.UserId, reward);
+            if (playersRewards.ContainsKey(connectionId))
+            {
+                playersRewards[connectionId]=reward;
+            }
+            else
+                playersRewards.Add(connectionId, reward);
         }
 
         private void TableToDiscard()
@@ -799,159 +937,39 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
             roundsPlayedInThisRoom++;
 
+            // kick players if no money
+            foreach (var client in clientsInRoom)
+            {
+                if (client.UserData.Money < Bet)
+                {
+                    Kick(client.ConnectionId, "Недостаточно денег на счету.");
+                }
+            }
+
             ClearLists();
         }
 
         /// <summary>
-        /// This means that defender did gave up his defence and picks up cards
+        /// Returns count of non-covered cards on table
         /// </summary>
-        private void DefenderPicksUp()
+        private int CardsToBeatCount()
         {
-            //Put cards from table to defender's hand
-            List<string> defenderHand = playerHands[defender.SlotInRoom];
+            int result = 0;
+
             foreach (var cardPair in cardsOnTable)
             {
-                defenderHand.Add(cardPair[0]);
-                if (cardPair.Length > 1 && cardPair[1] != null)
+                if (cardPair.Length > 1)
                 {
-                    defenderHand.Add(cardPair[1]);
-                }
-            }
-
-            foreach (var playerId in PlayerIds)
-            {
-                ServerSendPackets.Send_DefenderPicksCards(playerId,
-                    defender.ConnectionId, defender.SlotInRoom, cardsOnTable.Count);
-            }
-
-            cardsOnTable.Clear();
-        }
-
-        /// <summary>
-        /// Recieved on somebody passes a turn
-        /// </summary>
-        public void Pass(long passedPlayerId)
-        {
-            if (State != RoomState.Playing)
-            {
-                return;
-            }
-
-            if (cardsOnTable.Count == 0) return;
-
-            Client passedClient = GetClient(passedPlayerId);
-
-            //did he already passed
-            int slotN = GetSlotN(passedPlayerId);
-            if (playersPass[slotN] || playersWon[slotN]) return;
-
-
-            if (passedPlayerId == defender.ConnectionId)
-            {
-                if (!AllCardsBeaten())
-                {
-                    defenderGaveUpDefence = true; 
-                }
-                else
-                {
-                    return;
-                }
-            }
-            else if (passedClient == attacker)
-            {
-                attackerPassedPriority = true;
-            }
-            else if (!attackerPassedPriority)
-            {
-                //you can't attack
-                return;
-            }
-            
-
-            //Send to other players
-            foreach (var otherPlayer in PlayerIds)
-            {
-                if (otherPlayer == passedPlayerId) continue;
-
-                ServerSendPackets.Send_OtherPlayerPassed(otherPlayer, passedPlayerId, slotN);
-            }
-
-            playersPass[slotN] = true;
-
-
-            //if everybody are passed (also defender)
-            if (EverybodyPassed())
-            {
-                //send defender takes cards
-                DefenderPicksUp();
-
-                NextTurnDelay();
-            }
-            else if (EverybodyButDefenderPassed())
-            {
-                if (AllCardsBeaten())
-                {
-                    // send beaten
-                    foreach (var playerId in PlayerIds)
+                    if (cardPair[0] == null || cardPair[0] == ""
+                                            || cardPair[1] == null || cardPair[1] == "")
                     {
-                        ServerSendPackets.Send_Beaten(playerId);
+                        result++;
                     }
-                    NextTurnDelay();
-
-                    TableToDiscard();
                 }
             }
+
+            return result;
         }
-
-        /// <summary>
-        /// Recieved on somebody covers card on table
-        /// </summary>
-        public void CoverCardOnTable(long coveredPlayerId, string cardCodeOnTable, string cardCodeDropped)
-        {
-            //if player doesnt have this card then ignore
-            if (!playerHands[GetSlotN(coveredPlayerId)].Contains(cardCodeDropped))
-            {
-                return;
-            }
-
-            int cardOnTableIndex = FindNotCoveredCardOnTable(cardCodeOnTable);
-
-            //if there is no this card
-            if (cardOnTableIndex < 0)
-            {
-                //TODO send cant cover
-                //ServerSendPackets.Send_CantCoverThisCard(connectionId, cardCodeOnTable, cardCodeDropped);
-                return;
-            }
-
-            if (CanCoverThisCardWith(cardCodeOnTable, cardCodeDropped))
-            {
-                //Send to everybody in room
-                int slotN = GetSlotN(coveredPlayerId);
-                foreach (var recieverPlayerId in PlayerIds)
-                {
-                    if (recieverPlayerId == coveredPlayerId) continue;
-
-                    ServerSendPackets.Send_OtherPlayerCoversCard(recieverPlayerId, coveredPlayerId, slotN,
-                        cardCodeOnTable, cardCodeDropped);
-                }
-
-                //Set card [cardOnTableIndex] to covered
-                cardsOnTable[cardOnTableIndex][1] = cardCodeDropped;
-                playerHands[GetSlotN(coveredPlayerId)].Remove(cardCodeDropped);
-
-                TableUpdated(coveredPlayerId);
-            }
-            else
-            {
-                //TODO send cant cover
-                //ServerSendPackets.Send_CantCoverThisCard(connectionId, cardCodeOnTable, cardCodeDropped);
-            }
-        }
-
-        #endregion
-
-        #region Gameplay rules methods
 
         /// <summary>
         /// Validation of can card on table be covered with come card
@@ -1134,7 +1152,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
 
             MixTalon();
             Log.WriteLine("Talon mixed", this);
-
+            _betLeft = Bet * 0.9f;
 
             //tell to every player who does first turn
             foreach (var playerId in PlayerIds)
@@ -1279,7 +1297,7 @@ namespace FoolOnlineServer.GameServer.RoomLogic
                 //if you aldeary have 6+ cards then you won't take any more on this turn
                 int recieverSlotN = GetSlotN(recieverPlayer);
 
-#if TEST_MODE_TWOCARDS
+#if TEST_MODE_TWO_CARDS
                     MAX_DRAW_CARDS = 2;
 #endif
                 int cardsToDraw = Math.Max(MAX_DRAW_CARDS - playerHands[recieverSlotN].Count, 0);

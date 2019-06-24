@@ -21,7 +21,6 @@ namespace FoolOnlineServer
     /// </summary>
     public class Program
     {
-
         private static void Main(string[] args)
         {
             // if args are used
@@ -29,7 +28,6 @@ namespace FoolOnlineServer
             
             // Check MySql connection. If ok then open server
             DatabaseConnection.TestConnection(onConnected: OpenServer);
-
         }
 
         /// <summary>

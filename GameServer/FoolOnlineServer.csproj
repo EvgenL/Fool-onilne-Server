@@ -98,7 +98,6 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="src\AuthServer\AccountManager.cs" />
     <Compile Include="src\AuthServer\AccountsServer.cs" />
     <Compile Include="src\AuthServer\AccountsService.cs" />
     <Compile Include="src\AuthServer\AccountsUtil.cs" />

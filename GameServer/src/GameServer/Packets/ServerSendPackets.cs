@@ -53,9 +53,10 @@ namespace FoolOnlineServer.GameServer.Packets
             DefenderPicksCards,
             EndGameFool,
             PlayerWon,
+            Message,
+            Toast,
 
             // ACCOUNT
-            UpdateMoney,
             UpdateUserAvatar
         }
        
@@ -70,7 +71,7 @@ namespace FoolOnlineServer.GameServer.Packets
         {
             //check if client's online
             Client client = ClientManager.GetConnectedClient(connectionId);
-            if (!client.Online())
+            if (client == null || !client.Online())
             {
                 Log.WriteLine($"ERROR: Tried to send data to client {client} who isn't online. ", typeof(ServerSendPackets));
                 return;
@@ -599,7 +600,7 @@ namespace FoolOnlineServer.GameServer.Packets
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());
         }
-
+        
         public static void Send_EndGameGiveUp(long connectionId, long foolConnectionId, Dictionary<long, double> rewards)
         {
             //New packet
@@ -735,17 +736,31 @@ namespace FoolOnlineServer.GameServer.Packets
             SendDataTo(connectionId, buffer.ToArray());
         }
 
-        // TODO: Use this for withdraw funds
-        public static void Send_UpdateMoney(long connectionId, double money, double frozenMoney)
+        public static void Send_Message(long connectionId, string message)
         {
             //New packet
             ByteBuffer buffer = new ByteBuffer();
 
             //Add packet id
-            buffer.WriteLong((long)ServerPacketId.UpdateMoney);
+            buffer.WriteLong((long)ServerPacketId.Message);
 
-            buffer.WriteDouble(money);
-            buffer.WriteDouble(frozenMoney);
+            //Add message
+            buffer.WriteStringUnicode(message);
+
+            //Send packet
+            SendDataTo(connectionId, buffer.ToArray());
+        }
+
+        public static void Send_Toast(long connectionId, string message)
+        {
+            //New packet
+            ByteBuffer buffer = new ByteBuffer();
+
+            //Add packet id
+            buffer.WriteLong((long)ServerPacketId.Toast);
+
+            //Add message
+            buffer.WriteStringUnicode(message);
 
             //Send packet
             SendDataTo(connectionId, buffer.ToArray());
@@ -769,6 +784,7 @@ namespace FoolOnlineServer.GameServer.Packets
             SendDataTo(connectionIdReciever, buffer.ToArray());
         }
 
-        
+
+
     }
 }
